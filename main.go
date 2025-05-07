@@ -9,7 +9,7 @@ import (
 	productAdapter "github.com/wittawat/go-hex/adapter/product"
 	userAdapter "github.com/wittawat/go-hex/adapter/user"
 	"github.com/wittawat/go-hex/core/service"
-	mysql "github.com/wittawat/go-hex/db"
+	database "github.com/wittawat/go-hex/db"
 	"github.com/wittawat/go-hex/routes"
 )
 
@@ -17,9 +17,14 @@ const PORT = ":3030"
 
 func main() {
 
-	db, err := mysql.InitializeMysqlDB("mysql")
+	db, err := database.InitializeMysqlDB("mysql")
 	if err != nil {
 		log.Fatal("fail to connect mysql: ", err)
+	}
+
+	gormDb, err := database.InitializeDBWithGorm()
+	if err != nil {
+		log.Fatal("fail to connect mysql with gorm: ", err)
 	}
 
 	app := gin.Default()
@@ -34,8 +39,13 @@ func main() {
 	productHandler := productAdapter.NewHttpProductHandler(productService)
 	routes.RegisterProductHandler(app, productHandler)
 
-	orderRepo := orderAdapter.NewMysqlOrderRepository(db)
-	orderService := service.NewOrderService(orderRepo)
+	// orderRepo := orderAdapter.NewMysqlOrderRepository(db)
+	// orderService := service.NewOrderService(orderRepo)
+	// orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
+	// routes.RegisterOrderHandler(app, orderHandler)
+
+	orderRepo := orderAdapter.NewGormOrderRepository(gormDb)
+	orderService := service.NewGormOrderService(orderRepo)
 	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
 	routes.RegisterOrderHandler(app, orderHandler)
 
