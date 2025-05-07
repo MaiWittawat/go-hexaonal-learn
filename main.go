@@ -17,35 +17,28 @@ const PORT = ":3030"
 
 func main() {
 
-	db, err := database.InitializeMysqlDB("mysql")
-	if err != nil {
-		log.Fatal("fail to connect mysql: ", err)
-	}
-
-	gormDb, err := database.InitializeDBWithGorm()
+	db, err := database.InitializeDBWithGorm()
 	if err != nil {
 		log.Fatal("fail to connect mysql with gorm: ", err)
+	}
+	if err := database.Migration(db); err != nil {
+		log.Fatal("fail to migrate database: ", err)
 	}
 
 	app := gin.Default()
 
-	userRepo := userAdapter.NewMysqlUserRepository(db)
+	userRepo := userAdapter.NewGormUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := userAdapter.NewHttpUserHandler(userService)
 	routes.RegisterUserRoutes(app, userHandler)
 
-	productRepo := productAdapter.NewMysqlProductRepository(db)
+	productRepo := productAdapter.NewGormProductRepository(db)
 	productService := service.NewProductService(productRepo)
 	productHandler := productAdapter.NewHttpProductHandler(productService)
 	routes.RegisterProductHandler(app, productHandler)
 
-	// orderRepo := orderAdapter.NewMysqlOrderRepository(db)
-	// orderService := service.NewOrderService(orderRepo)
-	// orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
-	// routes.RegisterOrderHandler(app, orderHandler)
-
-	orderRepo := orderAdapter.NewGormOrderRepository(gormDb)
-	orderService := service.NewGormOrderService(orderRepo)
+	orderRepo := orderAdapter.NewGormOrderRepository(db)
+	orderService := service.NewOrderService(orderRepo)
 	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
 	routes.RegisterOrderHandler(app, orderHandler)
 

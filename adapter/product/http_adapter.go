@@ -33,7 +33,7 @@ func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
 func (h *HttpProductHandler) GetAllProduct(c *gin.Context) {
 	products, err := h.ib.Find()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Get all product successfully", "products": products})

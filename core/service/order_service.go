@@ -29,6 +29,18 @@ func (s *OrderService) GetByUser(userId int) ([]entities.Product, error) {
 }
 
 func (s *OrderService) Update(order *entities.Order, id int) error {
+	existOrder, err := s.repo.FindById(id)
+	if err != nil {
+		return err
+	}
+
+	if order.UserId == 0 {
+		order.UserId = existOrder.UserId
+	}
+	if order.ProductId == 0 {
+		order.ProductId = existOrder.ProductId
+	}
+
 	if err := s.repo.UpdateOne(order, id); err != nil {
 		return err
 	}

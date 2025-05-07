@@ -21,6 +21,15 @@ func (r *GormOrderRepository) DeleteOne(id int) error {
 	return nil
 }
 
+func (r *GormOrderRepository) FindById(id int) (*entities.Order, error) {
+	var order *entities.Order
+	result := r.db.First(&order)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return order, nil
+}
+
 func (r *GormOrderRepository) FindByUserId(userId int) ([]entities.Product, error) {
 	var products []entities.Product
 	result := r.db.Table("orders").
@@ -35,15 +44,10 @@ func (r *GormOrderRepository) FindByUserId(userId int) ([]entities.Product, erro
 }
 
 func (r *GormOrderRepository) UpdateOne(order *entities.Order, id int) error {
-	var o entities.Order
-	result := r.db.First(&o, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	o.UserId = order.UserId
-	o.ProductId = order.ProductId
+	result := r.db.Model(&entities.Order{}).Where("id = ?", id).
+		Select("user_id", "product_id").
+		Updates(order)
 
-	result = r.db.Save(&o)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -51,7 +55,7 @@ func (r *GormOrderRepository) UpdateOne(order *entities.Order, id int) error {
 }
 
 func (r *GormOrderRepository) Save(order *entities.Order) error {
-	result := r.db.Save(&order)
+	result := r.db.Create(&order)
 	if result.Error != nil {
 		return result.Error
 	}
