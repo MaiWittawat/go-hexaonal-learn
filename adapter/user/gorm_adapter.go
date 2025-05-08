@@ -1,3 +1,4 @@
+// adapter/user/gorm_adapter.go
 package adapter
 
 import (
@@ -24,6 +25,15 @@ func (r *GormUserRepository) Save(user *entities.User) error {
 func (r *GormUserRepository) FindById(id int) (*entities.User, error) {
 	var user entities.User
 	result := r.db.First(&user, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+func (r *GormUserRepository) FindByEmail(email string) (*entities.User, error) {
+	var user entities.User
+	result := r.db.Where("email=?", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}

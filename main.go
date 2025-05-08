@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	jwtAdapter "github.com/wittawat/go-hex/adapter/auth"
 	orderAdapter "github.com/wittawat/go-hex/adapter/order"
 	productAdapter "github.com/wittawat/go-hex/adapter/product"
 	userAdapter "github.com/wittawat/go-hex/adapter/user"
@@ -20,22 +21,28 @@ func main() {
 	db, err := database.InitializeDBWithGorm()
 	if err != nil {
 		log.Fatal("fail to connect mysql with gorm: ", err)
+
 	}
 	if err := database.Migration(db); err != nil {
 		log.Fatal("fail to migrate database: ", err)
+		panic("migrate error")
 	}
 
 	app := gin.Default()
 
+	authNSvc := jwtAdapter.NewAuthNServiceImpl()
+
 	userRepo := userAdapter.NewGormUserRepository(db)
-	userService := service.NewUserService(userRepo)
+	authZSvc := jwtAdapter.NewAuthZServiceImpl(userRepo)
+
+	userService := service.NewUserService(userRepo, authNSvc)
 	userHandler := userAdapter.NewHttpUserHandler(userService)
-	routes.RegisterUserRoutes(app, userHandler)
+	routes.RegisterUserRoutes(app, userHandler, authNSvc)
 
 	productRepo := productAdapter.NewGormProductRepository(db)
 	productService := service.NewProductService(productRepo)
 	productHandler := productAdapter.NewHttpProductHandler(productService)
-	routes.RegisterProductHandler(app, productHandler)
+	routes.RegisterProductHandler(app, productHandler, authNSvc, authZSvc)
 
 	orderRepo := orderAdapter.NewGormOrderRepository(db)
 	orderService := service.NewOrderService(orderRepo)

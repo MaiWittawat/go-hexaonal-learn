@@ -1,3 +1,4 @@
+// adapter/user/http_adapter.go
 package adapter
 
 import (
@@ -18,6 +19,7 @@ func NewHttpUserHandler(ib port.UserInbound) *HttpUserHandler {
 }
 
 func (h *HttpUserHandler) Register(c *gin.Context) {
+
 	var user entities.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
@@ -102,4 +104,20 @@ func (h *HttpUserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted user successfully"})
+}
+
+func (h *HttpUserHandler) Login(c *gin.Context) {
+	var user entities.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.ib.Login(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Login successfully", "token": token})
 }

@@ -4,15 +4,17 @@ import (
 	"errors"
 
 	"github.com/wittawat/go-hex/core/entities"
+	auth "github.com/wittawat/go-hex/core/port/auth"
 	port "github.com/wittawat/go-hex/core/port/user"
 )
 
 type UserService struct {
-	ob port.UserOutbound //user repository
+	ob    port.UserOutbound //user repository
+	token auth.JwtAuthNService
 }
 
-func NewUserService(ob port.UserOutbound) port.UserInbound {
-	return &UserService{ob: ob}
+func NewUserService(ob port.UserOutbound, token auth.JwtAuthNService) port.UserInbound {
+	return &UserService{ob: ob, token: token}
 }
 
 func (s *UserService) Save(user *entities.User) error {
@@ -28,6 +30,14 @@ func (s *UserService) Save(user *entities.User) error {
 
 func (s *UserService) FindById(id int) (*entities.User, error) {
 	user, err := s.ob.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *UserService) FindByEmail(email string) (*entities.User, error) {
+	user, err := s.ob.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
@@ -54,4 +64,16 @@ func (s *UserService) DeleteOne(id int) error {
 		return err
 	}
 	return nil
+}
+
+func (s *UserService) Login(user *entities.User) (string, error) {
+	u, err := s.ob.FindByEmail(user.Email)
+	if err == nil && u.Email == user.Email && u.Password == user.Password {
+		token, err := s.token.CreateToken(u.Email)
+		if err != nil {
+			return "", nil
+		}
+		return token, nil
+	}
+	return "", nil
 }
