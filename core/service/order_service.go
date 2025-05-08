@@ -2,14 +2,14 @@ package service
 
 import (
 	"github.com/wittawat/go-hex/core/entities"
-	port "github.com/wittawat/go-hex/core/port/order"
+	orderPort "github.com/wittawat/go-hex/core/port/order"
 )
 
 type OrderService struct {
-	repo port.OrderRepository
+	repo orderPort.OrderRepository
 }
 
-func NewOrderService(repo port.OrderRepository) port.OrderService {
+func NewOrderService(repo orderPort.OrderRepository) orderPort.OrderService {
 	return &OrderService{repo: repo}
 }
 

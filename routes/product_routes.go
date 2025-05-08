@@ -2,17 +2,18 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	auth "github.com/wittawat/go-hex/adapter/auth"
+	authAdapter "github.com/wittawat/go-hex/adapter/auth"
 	middleware "github.com/wittawat/go-hex/adapter/middleware"
-	adapter "github.com/wittawat/go-hex/adapter/product"
+	productAdapter "github.com/wittawat/go-hex/adapter/product"
 )
 
-func RegisterProductHandler(app *gin.Engine, productHandler *adapter.HttpProductHandler, authNSvc *auth.AuthNServiceImpl, authZSvc *auth.AuthZServiceImpl) {
-	protected := app.Group("/products")
-	protected.GET("/", productHandler.GetAllProduct)
-	protected.GET("/:id", productHandler.GetProduct)
+func RegisterProductHandler(app *gin.Engine, productHandler *productAdapter.HttpProductHandler, authNSvc *authAdapter.AuthNServiceImpl, authZSvc *authAdapter.AuthZServiceImpl) {
+	public := app.Group("/products")
+	public.GET("/", productHandler.GetAllProduct)
+	public.GET("/:id", productHandler.GetProduct)
 
-	protected.POST("/", middleware.RequireRoles(authNSvc, authZSvc, "seller"), productHandler.CreateProduct)
-	protected.PATCH("/:id", middleware.RequireRoles(authNSvc, authZSvc, "seller"), productHandler.UpdateProduct)
-	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "sellter"), productHandler.DeleteProduct)
+	protected := app.Group("/products", middleware.JWTAuthMiddleware(authNSvc))
+	protected.POST("/", middleware.RequireRoles(authNSvc, authZSvc, "seller", "admin"), productHandler.CreateProduct)
+	protected.PATCH("/:id", middleware.RequireRoles(authNSvc, authZSvc, "seller", "admin"), productHandler.UpdateProduct)
+	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "sellter", "admin"), productHandler.DeleteProduct)
 }

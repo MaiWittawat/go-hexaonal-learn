@@ -1,4 +1,4 @@
-package adapter
+package productAdapter
 
 import (
 	"github.com/wittawat/go-hex/core/entities"

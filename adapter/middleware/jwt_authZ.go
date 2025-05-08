@@ -1,5 +1,5 @@
 // adapter/middleware/jwt_authZ.go
-package adapter
+package middlewareAdapter
 
 import (
 	"log"
@@ -8,10 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	port "github.com/wittawat/go-hex/core/port/auth"
+	authPort "github.com/wittawat/go-hex/core/port/auth"
 )
 
-func RequireRoles(tokenSvc port.JwtAuthNService, authZSvc port.JwtAuthZService, roles ...string) gin.HandlerFunc {
+func RequireRoles(tokenSvc authPort.JwtAuthNService, authZSvc authPort.JwtAuthZService, roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		token := strings.TrimPrefix(authHeader, "Bearer ")
@@ -39,7 +39,7 @@ func RequireRoles(tokenSvc port.JwtAuthNService, authZSvc port.JwtAuthZService, 
 			return
 		}
 
-		authorized, err := authZSvc.Authorize(email, roles)
+		authorized, err := authZSvc.Authorize(email, roles...)
 		if !authorized || err != nil {
 			log.Println("invalid token claims: ", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})

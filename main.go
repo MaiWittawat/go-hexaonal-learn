@@ -37,7 +37,7 @@ func main() {
 
 	userService := service.NewUserService(userRepo, authNSvc)
 	userHandler := userAdapter.NewHttpUserHandler(userService)
-	routes.RegisterUserRoutes(app, userHandler, authNSvc)
+	routes.RegisterUserRoutes(app, userHandler, authNSvc, authZSvc)
 
 	productRepo := productAdapter.NewGormProductRepository(db)
 	productService := service.NewProductService(productRepo)
@@ -47,7 +47,7 @@ func main() {
 	orderRepo := orderAdapter.NewGormOrderRepository(db)
 	orderService := service.NewOrderService(orderRepo)
 	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
-	routes.RegisterOrderHandler(app, orderHandler)
+	routes.RegisterOrderHandler(app, orderHandler, authNSvc, authZSvc)
 
 	if err := app.Run(PORT); err != nil {
 		log.Fatal("fail to start server: ", err)

@@ -2,26 +2,26 @@ package service
 
 import (
 	"github.com/wittawat/go-hex/core/entities"
-	port "github.com/wittawat/go-hex/core/port/product"
+	productPort "github.com/wittawat/go-hex/core/port/product"
 )
 
 type ProductService struct {
-	ob port.ProductOutbound
+	repo productPort.ProductRepository
 }
 
-func NewProductService(ob port.ProductOutbound) port.ProductInbound {
-	return &ProductService{ob: ob}
+func NewProductService(repo productPort.ProductRepository) productPort.ProductService {
+	return &ProductService{repo: repo}
 }
 
 func (s *ProductService) Save(product *entities.Product) error {
-	if err := s.ob.Save(product); err != nil {
+	if err := s.repo.Save(product); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *ProductService) Find() ([]entities.Product, error) {
-	products, err := s.ob.Find()
+	products, err := s.repo.Find()
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (s *ProductService) Find() ([]entities.Product, error) {
 }
 
 func (s *ProductService) FindById(id int) (*entities.Product, error) {
-	product, err := s.ob.FindById(id)
+	product, err := s.repo.FindById(id)
 	if err != nil {
 		return nil, err
 	}
@@ -37,14 +37,14 @@ func (s *ProductService) FindById(id int) (*entities.Product, error) {
 }
 
 func (s *ProductService) UpdateOne(product *entities.Product, id int) error {
-	if err := s.ob.UpdateOne(product, id); err != nil {
+	if err := s.repo.UpdateOne(product, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *ProductService) DeleteOne(id int) error {
-	if err := s.ob.DeleteOne(id); err != nil {
+	if err := s.repo.DeleteOne(id); err != nil {
 		return err
 	}
 	return nil

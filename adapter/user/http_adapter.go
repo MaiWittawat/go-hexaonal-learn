@@ -1,5 +1,5 @@
 // adapter/user/http_adapter.go
-package adapter
+package userAdapter
 
 import (
 	"net/http"
@@ -7,15 +7,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
-	port "github.com/wittawat/go-hex/core/port/user"
+	userPort "github.com/wittawat/go-hex/core/port/user"
 )
 
 type HttpUserHandler struct {
-	ib port.UserInbound
+	service userPort.UserService
 }
 
-func NewHttpUserHandler(ib port.UserInbound) *HttpUserHandler {
-	return &HttpUserHandler{ib: ib}
+func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
+	return &HttpUserHandler{service: service}
 }
 
 func (h *HttpUserHandler) Register(c *gin.Context) {
@@ -26,7 +26,7 @@ func (h *HttpUserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err := h.ib.Save(&user); err != nil {
+	if err := h.service.Save(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -40,7 +40,7 @@ func (h *HttpUserHandler) GetUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	user, err := h.ib.FindById(id)
+	user, err := h.service.FindById(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,7 +49,7 @@ func (h *HttpUserHandler) GetUser(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) GetAllUser(c *gin.Context) {
-	users, err := h.ib.Find()
+	users, err := h.service.Find()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
 		return
@@ -70,7 +70,7 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	existUser, err := h.ib.FindById(id)
+	existUser, err := h.service.FindById(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -86,7 +86,7 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 		user.Password = existUser.Password
 	}
 
-	if err = h.ib.UpdateOne(&user, id); err != nil {
+	if err = h.service.UpdateOne(&user, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -99,7 +99,7 @@ func (h *HttpUserHandler) DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
 		return
 	}
-	if err = h.ib.DeleteOne(id); err != nil {
+	if err = h.service.DeleteOne(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -113,7 +113,7 @@ func (h *HttpUserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.ib.Login(&user)
+	token, err := h.service.Login(&user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

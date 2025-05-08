@@ -1,6 +1,6 @@
 // port/auth/authZ.go
-package port
+package authPort
 
 type JwtAuthZService interface {
-	Authorize(email string, roles []string) (bool, error)
+	Authorize(email string, roles ...string) (bool, error)
 }

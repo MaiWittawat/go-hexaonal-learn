@@ -1,14 +1,14 @@
-package adapter
+package middlewareAdapter
 
 import (
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	auth "github.com/wittawat/go-hex/core/port/auth"
+	authPort "github.com/wittawat/go-hex/core/port/auth"
 )
 
-func JWTAuthMiddleware(tokenService auth.JwtAuthNService) gin.HandlerFunc {
+func JWTAuthMiddleware(tokenService authPort.JwtAuthNService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := c.GetHeader("Authorization")
 		token := strings.TrimPrefix(s, "Bearer ")

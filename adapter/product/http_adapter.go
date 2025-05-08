@@ -1,4 +1,4 @@
-package adapter
+package productAdapter
 
 import (
 	"net/http"
@@ -6,15 +6,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
-	port "github.com/wittawat/go-hex/core/port/product"
+	productPort "github.com/wittawat/go-hex/core/port/product"
 )
 
 type HttpProductHandler struct {
-	ib port.ProductInbound
+	service productPort.ProductService
 }
 
-func NewHttpProductHandler(ib port.ProductInbound) *HttpProductHandler {
-	return &HttpProductHandler{ib: ib}
+func NewHttpProductHandler(service productPort.ProductService) *HttpProductHandler {
+	return &HttpProductHandler{service: service}
 }
 
 func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
@@ -23,7 +23,7 @@ func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
 		return
 	}
-	if err := h.ib.Save(&product); err != nil {
+	if err := h.service.Save(&product); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error})
 		return
 	}
@@ -31,7 +31,7 @@ func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
 }
 
 func (h *HttpProductHandler) GetAllProduct(c *gin.Context) {
-	products, err := h.ib.Find()
+	products, err := h.service.Find()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
@@ -45,7 +45,7 @@ func (h *HttpProductHandler) GetProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
 	}
-	product, err := h.ib.FindById(id)
+	product, err := h.service.FindById(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error})
 		return
@@ -66,7 +66,7 @@ func (h *HttpProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	existProduct, err := h.ib.FindById(id)
+	existProduct, err := h.service.FindById(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -82,7 +82,7 @@ func (h *HttpProductHandler) UpdateProduct(c *gin.Context) {
 		product.Detail = existProduct.Detail
 	}
 
-	if err = h.ib.UpdateOne(&product, id); err != nil {
+	if err = h.service.UpdateOne(&product, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -95,7 +95,7 @@ func (h *HttpProductHandler) DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
 	}
-	if err = h.ib.DeleteOne(id); err != nil {
+	if err = h.service.DeleteOne(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

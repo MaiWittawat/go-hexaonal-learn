@@ -1,4 +1,4 @@
-package adapter
+package orderAdapter
 
 import (
 	"net/http"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
-	port "github.com/wittawat/go-hex/core/port/order"
+	orderPort "github.com/wittawat/go-hex/core/port/order"
 )
 
 type HttpOrderHandler struct {
-	service port.OrderService
+	service orderPort.OrderService
 }
 
-func NewHttpOrderHandler(service port.OrderService) *HttpOrderHandler {
+func NewHttpOrderHandler(service orderPort.OrderService) *HttpOrderHandler {
 	return &HttpOrderHandler{service: service}
 }
 

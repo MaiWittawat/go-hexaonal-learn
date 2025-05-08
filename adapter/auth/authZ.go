@@ -1,21 +1,21 @@
 // adapter/auth/authZ.go
-package adapter
+package authAdapter
 
 import (
 	"errors"
 
-	port "github.com/wittawat/go-hex/core/port/user"
+	userPort "github.com/wittawat/go-hex/core/port/user"
 )
 
 type AuthZServiceImpl struct {
-	userRepo port.UserOutbound
+	userRepo userPort.UserRepository
 }
 
-func NewAuthZServiceImpl(userRepo port.UserOutbound) *AuthZServiceImpl {
+func NewAuthZServiceImpl(userRepo userPort.UserRepository) *AuthZServiceImpl {
 	return &AuthZServiceImpl{userRepo: userRepo}
 }
 
-func (a *AuthZServiceImpl) Authorize(email string, requiredRoles []string) (bool, error) {
+func (a *AuthZServiceImpl) Authorize(email string, requiredRoles ...string) (bool, error) {
 	user, err := a.userRepo.FindByEmail(email)
 	if err != nil {
 		return false, err

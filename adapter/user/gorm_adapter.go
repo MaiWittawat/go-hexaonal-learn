@@ -1,5 +1,5 @@
 // adapter/user/gorm_adapter.go
-package adapter
+package userAdapter
 
 import (
 	"github.com/wittawat/go-hex/core/entities"
