@@ -13,8 +13,8 @@ func RegisterUserRoutes(app *gin.Engine, userHandler *userAdapter.HttpUserHandle
 	public.POST("/login", userHandler.Login)
 
 	protected := app.Group("/users", middleware.JWTAuthMiddleware(authNSvc))
-	protected.GET("/", middleware.RequireRoles(authNSvc, authZSvc, "admin"), userHandler.GetAllUser)
 	protected.GET("/:id", userHandler.GetUser)
-	protected.PATCH("/:id", userHandler.UpdateUser)
-	protected.DELETE("/:id", userHandler.DeleteUser)
+	protected.GET("/", middleware.RequireRoles(authNSvc, authZSvc, "admin"), userHandler.GetAllUser)
+	protected.PATCH("/:id", middleware.RequireRoles(authNSvc, authZSvc, "admin", "seller", "user"), userHandler.UpdateUser)
+	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "admin", "seller", "user"), userHandler.DeleteUser)
 }

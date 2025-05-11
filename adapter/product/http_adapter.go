@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
+	"github.com/wittawat/go-hex/core/entities/request"
 	productPort "github.com/wittawat/go-hex/core/port/product"
 )
 
@@ -17,12 +18,21 @@ func NewHttpProductHandler(service productPort.ProductService) *HttpProductHandl
 	return &HttpProductHandler{service: service}
 }
 
+func newProductFromRequest(req *request.ProductRequest) entities.Product {
+	return entities.Product{
+		Title:  req.Title,
+		Price:  req.Price,
+		Detail: req.Detail,
+	}
+}
+
 func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
-	var product entities.Product
-	if err := c.ShouldBindJSON(&product); err != nil {
+	var productReq request.ProductRequest
+	if err := c.ShouldBindJSON(&productReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
 		return
 	}
+	product := newProductFromRequest(&productReq)
 	if err := h.service.Save(&product); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error})
 		return
@@ -60,28 +70,13 @@ func (h *HttpProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	var product entities.Product
-	if err = c.ShouldBindJSON(&product); err != nil {
+	var productReq request.ProductRequest
+	if err = c.ShouldBindJSON(&productReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
 
-	existProduct, err := h.service.FindById(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	if product.Title == "" {
-		product.Title = existProduct.Title
-	}
-	if product.Price == 0 {
-		product.Price = existProduct.Price
-	}
-	if product.Detail == "" {
-		product.Detail = existProduct.Detail
-	}
-
+	product := newProductFromRequest(&productReq)
 	if err = h.service.UpdateOne(&product, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

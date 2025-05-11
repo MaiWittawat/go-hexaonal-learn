@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
+	"github.com/wittawat/go-hex/core/entities/request"
 	orderPort "github.com/wittawat/go-hex/core/port/order"
 )
 
@@ -17,12 +18,21 @@ func NewHttpOrderHandler(service orderPort.OrderService) *HttpOrderHandler {
 	return &HttpOrderHandler{service: service}
 }
 
+func newOrderFromRequest(req *request.OrderRequest) entities.Order {
+	return entities.Order{
+		UserId:    req.UserId,
+		ProductId: req.ProductId,
+	}
+}
+
 func (h *HttpOrderHandler) CreateOrder(c *gin.Context) {
-	var order entities.Order
-	if err := c.ShouldBindJSON(&order); err != nil {
+	var orderReq request.OrderRequest
+	if err := c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	order := newOrderFromRequest(&orderReq)
 	if err := h.service.Create(&order); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -52,12 +62,13 @@ func (h *HttpOrderHandler) UpdateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var order entities.Order
-	if err = c.ShouldBindJSON(&order); err != nil {
+	var orderReq request.OrderRequest
+	if err = c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	order := newOrderFromRequest(&orderReq)
 	if err = h.service.Update(&order, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

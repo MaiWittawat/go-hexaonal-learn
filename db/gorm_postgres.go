@@ -1,18 +1,20 @@
 package db
 
 import (
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/wittawat/go-hex/core/entities"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func InitializeDBWithGorm() (*gorm.DB, error) {
+func InitializePgWithGorm() (*gorm.DB, error) {
 	godotenv.Load()
-	dns := os.Getenv("MYSQL_URI")
-	dialector := mysql.Open(dns)
+	dns := os.Getenv("POSTGRES_URI")
+	log.Println("dns: ", dns)
+	dialector := postgres.Open(dns)
 	db, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 		return nil, err

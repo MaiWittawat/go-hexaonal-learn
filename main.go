@@ -18,33 +18,32 @@ const PORT = ":3030"
 
 func main() {
 
-	db, err := database.InitializeDBWithGorm()
+	pgDB, err := database.InitializePgWithGorm()
 	if err != nil {
-		log.Fatal("fail to connect mysql with gorm: ", err)
+		log.Fatal("fail to connect postgres with gorm: ", err)
 
 	}
-	if err := database.Migration(db); err != nil {
+	if err := database.Migration(pgDB); err != nil {
 		log.Fatal("fail to migrate database: ", err)
-		panic("migrate error")
 	}
 
 	app := gin.Default()
 
 	authNSvc := jwtAdapter.NewAuthNServiceImpl()
 
-	userRepo := userAdapter.NewGormUserRepository(db)
+	userRepo := userAdapter.NewGormUserRepository(pgDB)
 	authZSvc := jwtAdapter.NewAuthZServiceImpl(userRepo)
 
 	userService := service.NewUserService(userRepo, authNSvc)
 	userHandler := userAdapter.NewHttpUserHandler(userService)
 	routes.RegisterUserRoutes(app, userHandler, authNSvc, authZSvc)
 
-	productRepo := productAdapter.NewGormProductRepository(db)
+	productRepo := productAdapter.NewGormProductRepository(pgDB)
 	productService := service.NewProductService(productRepo)
 	productHandler := productAdapter.NewHttpProductHandler(productService)
 	routes.RegisterProductHandler(app, productHandler, authNSvc, authZSvc)
 
-	orderRepo := orderAdapter.NewGormOrderRepository(db)
+	orderRepo := orderAdapter.NewGormOrderRepository(pgDB)
 	orderService := service.NewOrderService(orderRepo)
 	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
 	routes.RegisterOrderHandler(app, orderHandler, authNSvc, authZSvc)

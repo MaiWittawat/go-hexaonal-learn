@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wittawat/go-hex/core/entities"
+	"github.com/wittawat/go-hex/core/entities/request"
 	userPort "github.com/wittawat/go-hex/core/port/user"
 )
 
@@ -18,20 +19,47 @@ func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
 	return &HttpUserHandler{service: service}
 }
 
-func (h *HttpUserHandler) Register(c *gin.Context) {
+func newUserFromRequet(req *request.UserRequest) entities.User {
+	return entities.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+	}
+}
 
-	var user entities.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+func (h *HttpUserHandler) Register(c *gin.Context) {
+	var userReq request.UserRequest
+	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-
+	user := newUserFromRequet(&userReq)
 	if err := h.service.Save(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Created user successfully"})
+}
+
+func (h *HttpUserHandler) Login(c *gin.Context) {
+	var userReq request.UserRequest
+	if err := c.ShouldBindJSON(&userReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.service.Login(&userReq)
+	if token == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Login fail invalid username, email or password"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login successfully", "token": token})
 }
 
 func (h *HttpUserHandler) GetUser(c *gin.Context) {
@@ -58,35 +86,31 @@ func (h *HttpUserHandler) GetAllUser(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
+	emailVal, exists := c.Get("userEmail")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	email, ok := emailVal.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userEmail in context"})
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
 		return
 	}
 
-	var user entities.User
-	if err = c.ShouldBindJSON(&user); err != nil {
+	var userReq request.UserRequest
+	if err = c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
 
-	existUser, err := h.service.FindById(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	if user.Username == "" {
-		user.Username = existUser.Username
-	}
-	if user.Email == "" {
-		user.Email = existUser.Email
-	}
-	if user.Password == "" {
-		user.Password = existUser.Password
-	}
-
-	if err = h.service.UpdateOne(&user, id); err != nil {
+	user := newUserFromRequet(&userReq)
+	if err = h.service.UpdateOne(&user, id, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -94,30 +118,26 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) DeleteUser(c *gin.Context) {
+	emailVal, exists := c.Get("userEmail")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	email, ok := emailVal.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userEmail"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
 		return
 	}
-	if err = h.service.DeleteOne(id); err != nil {
+	if err = h.service.DeleteOne(id, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted user successfully"})
-}
-
-func (h *HttpUserHandler) Login(c *gin.Context) {
-	var user entities.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	token, err := h.service.Login(&user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": "Login successfully", "token": token})
 }

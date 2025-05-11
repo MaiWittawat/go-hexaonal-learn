@@ -37,9 +37,25 @@ func (s *ProductService) FindById(id int) (*entities.Product, error) {
 }
 
 func (s *ProductService) UpdateOne(product *entities.Product, id int) error {
+	existProduct, err := s.repo.FindById(id)
+	if err != nil {
+		return err
+	}
+
+	if product.Title == "" {
+		product.Title = existProduct.Title
+	}
+	if product.Price == 0 {
+		product.Price = existProduct.Price
+	}
+	if product.Detail == "" {
+		product.Detail = existProduct.Detail
+	}
+
 	if err := s.repo.UpdateOne(product, id); err != nil {
 		return err
 	}
+
 	return nil
 }
 
