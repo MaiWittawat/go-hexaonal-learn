@@ -1,9 +1,12 @@
 package entities
 
-import "gorm.io/gorm"
+import "time"
 
 type Order struct {
-	gorm.Model
-	UserId    uint `gorm:"user_id"`
-	ProductId uint `gorm:"product_id"`
+	ID        string
+	UserID    string
+	ProductID string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
 }

@@ -1,54 +1,47 @@
 package main
 
 import (
+	"context"
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
-	jwtAdapter "github.com/wittawat/go-hex/adapter/auth"
-	orderAdapter "github.com/wittawat/go-hex/adapter/order"
-	productAdapter "github.com/wittawat/go-hex/adapter/product"
-	userAdapter "github.com/wittawat/go-hex/adapter/user"
-	"github.com/wittawat/go-hex/core/service"
-	database "github.com/wittawat/go-hex/db"
-	"github.com/wittawat/go-hex/routes"
+	"github.com/joho/godotenv"
+	"github.com/wittawat/go-hex/bootstrap"
+	boostrap "github.com/wittawat/go-hex/bootstrap"
 )
 
 const PORT = ":3030"
 
 func main() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	pgDB, err := database.InitializePgWithGorm()
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("fail to connect postgres with gorm: ", err)
-
-	}
-	if err := database.Migration(pgDB); err != nil {
-		log.Fatal("fail to migrate database: ", err)
+		panic("fail to load env")
 	}
 
+	dbType := "mongo" // change dbType to "postgres" if you want to try on postgres
 	app := gin.Default()
 
-	authNSvc := jwtAdapter.NewAuthNServiceImpl()
-
-	userRepo := userAdapter.NewGormUserRepository(pgDB)
-	authZSvc := jwtAdapter.NewAuthZServiceImpl(userRepo)
-
-	userService := service.NewUserService(userRepo, authNSvc)
-	userHandler := userAdapter.NewHttpUserHandler(userService)
-	routes.RegisterUserRoutes(app, userHandler, authNSvc, authZSvc)
-
-	productRepo := productAdapter.NewGormProductRepository(pgDB)
-	productService := service.NewProductService(productRepo)
-	productHandler := productAdapter.NewHttpProductHandler(productService)
-	routes.RegisterProductHandler(app, productHandler, authNSvc, authZSvc)
-
-	orderRepo := orderAdapter.NewGormOrderRepository(pgDB)
-	orderService := service.NewOrderService(orderRepo)
-	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
-	routes.RegisterOrderHandler(app, orderHandler, authNSvc, authZSvc)
+	switch dbType {
+	case "postgres":
+		err := boostrap.InitPostgresApp(app)
+		if err != nil {
+			log.Fatal("failed to init postgres app:", err)
+		}
+	case "mongo":
+		client, err := bootstrap.InitMongoApp(ctx, app)
+		if err != nil {
+			log.Fatal("failed to init mongo app:", err)
+		}
+		defer client.Disconnect(ctx)
+	default:
+		log.Fatal("invalid DB_TYPE")
+	}
 
 	if err := app.Run(PORT); err != nil {
-		log.Fatal("fail to start server: ", err)
+		log.Fatal("failed to run server:", err)
 	}
 }

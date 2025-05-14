@@ -1,11 +1,15 @@
 package orderPort
 
-import "github.com/wittawat/go-hex/core/entities"
+import (
+	"context"
+
+	"github.com/wittawat/go-hex/core/entities"
+)
 
 // inbound
 type OrderService interface {
-	Create(order *entities.Order) error
-	GetByUser(userId int) ([]entities.Product, error)
-	Update(order *entities.Order, id int) error
-	Delete(id int) error
+	Create(ctx context.Context, order *entities.Order, email string) error
+	GetByUser(ctx context.Context, userId string) ([]entities.Product, error)
+	EditOne(ctx context.Context, order *entities.Order, id string, email string) error
+	DropOne(ctx context.Context, id string, email string) error
 }

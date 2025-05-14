@@ -1,11 +1,15 @@
 package productPort
 
-import "github.com/wittawat/go-hex/core/entities"
+import (
+	"context"
+
+	"github.com/wittawat/go-hex/core/entities"
+)
 
 type ProductService interface {
-	Save(product *entities.Product) error
-	FindById(id int) (*entities.Product, error)
-	Find() ([]entities.Product, error)
-	UpdateOne(product *entities.Product, id int) error
-	DeleteOne(id int) error
+	Create(ctx context.Context, product *entities.Product, emil string) error
+	GetById(ctx context.Context, id string) (*entities.Product, error)
+	GetAll(ctx context.Context) ([]entities.Product, error)
+	EditOne(ctx context.Context, product *entities.Product, id string, email string) error
+	DropOne(ctx context.Context, id string, email string) error
 }

@@ -1,10 +1,14 @@
 package entities
 
-import "gorm.io/gorm"
+import "time"
 
 type Product struct {
-	gorm.Model
-	Title  string `gorm:"title"`
-	Price  uint   `gorm:"price"`
-	Detail string `gorm:"detail"`
+	ID        string
+	Title     string
+	Price     int32
+	Detail    string
+	CreatedBy string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
 }

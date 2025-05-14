@@ -1,39 +1,54 @@
 package orderAdapter
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wittawat/go-hex/adapter/helper"
 	"github.com/wittawat/go-hex/core/entities"
-	"github.com/wittawat/go-hex/core/entities/request"
 	orderPort "github.com/wittawat/go-hex/core/port/order"
 )
+
+// ------------------------ Entities ------------------------ //
+type OrderRequest struct {
+	UserID    string
+	ProductID string `json:"product_id"`
+}
 
 type HttpOrderHandler struct {
 	service orderPort.OrderService
 }
 
+// ------------------------ Constructor ------------------------ //
 func NewHttpOrderHandler(service orderPort.OrderService) *HttpOrderHandler {
 	return &HttpOrderHandler{service: service}
 }
 
-func newOrderFromRequest(req *request.OrderRequest) entities.Order {
+func newOrderFromRequest(req *OrderRequest) entities.Order {
 	return entities.Order{
-		UserId:    req.UserId,
-		ProductId: req.ProductId,
+		UserID:    req.UserID,
+		ProductID: req.ProductID,
 	}
 }
 
+// ------------------------ Method ------------------------ //
 func (h *HttpOrderHandler) CreateOrder(c *gin.Context) {
-	var orderReq request.OrderRequest
+	email, ok := helper.GetUserEmail(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var orderReq OrderRequest
 	if err := c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	order := newOrderFromRequest(&orderReq)
-	if err := h.service.Create(&order); err != nil {
+	fmt.Println("order: ", order)
+	if err := h.service.Create(c.Request.Context(), &order, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -41,13 +56,8 @@ func (h *HttpOrderHandler) CreateOrder(c *gin.Context) {
 }
 
 func (h *HttpOrderHandler) FindOrder(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("user_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	orders, err := h.service.GetByUser(id)
+	id := c.Param("user_id")
+	orders, err := h.service.GetByUser(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -57,19 +67,21 @@ func (h *HttpOrderHandler) FindOrder(c *gin.Context) {
 }
 
 func (h *HttpOrderHandler) UpdateOrder(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	id := c.Param("id")
+	email, ok := helper.GetUserEmail(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	var orderReq request.OrderRequest
-	if err = c.ShouldBindJSON(&orderReq); err != nil {
+
+	var orderReq OrderRequest
+	if err := c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	order := newOrderFromRequest(&orderReq)
-	if err = h.service.Update(&order, id); err != nil {
+	if err := h.service.EditOne(c.Request.Context(), &order, id, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -78,12 +90,14 @@ func (h *HttpOrderHandler) UpdateOrder(c *gin.Context) {
 }
 
 func (h *HttpOrderHandler) DeleteOrder(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	id := c.Param("id")
+	email, ok := helper.GetUserEmail(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	if err = h.service.Delete(id); err != nil {
+
+	if err := h.service.DropOne(c.Request.Context(), id, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

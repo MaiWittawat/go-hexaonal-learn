@@ -7,10 +7,11 @@ import (
 	userAdapter "github.com/wittawat/go-hex/adapter/user"
 )
 
-func RegisterUserRoutes(app *gin.Engine, userHandler *userAdapter.HttpUserHandler, authNSvc *authAdapter.AuthNServiceImpl, authZSvc *authAdapter.AuthZServiceImpl) {
+func RegisterUserHandler(app *gin.Engine, userHandler *userAdapter.HttpUserHandler, authNSvc *authAdapter.AuthNServiceImpl, authZSvc *authAdapter.AuthZServiceImpl) {
 	public := app.Group("/")
-	public.POST("/register", userHandler.Register)
+	public.POST("/register/user", userHandler.Register)
 	public.POST("/login", userHandler.Login)
+	public.POST("/register/seller", userHandler.SellerRegister)
 
 	protected := app.Group("/users", middleware.JWTAuthMiddleware(authNSvc))
 	protected.GET("/:id", userHandler.GetUser)

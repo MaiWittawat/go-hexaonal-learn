@@ -29,8 +29,8 @@ func (j *AuthNServiceImpl) CreateToken(email string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *AuthNServiceImpl) VerifyToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+func (j *AuthNServiceImpl) VerifyToken(tokenStr string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		return secretKey, nil
 	})
 	if err != nil {

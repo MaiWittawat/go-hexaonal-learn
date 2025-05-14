@@ -5,12 +5,14 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/wittawat/go-hex/core/entities"
+	orderAdapter "github.com/wittawat/go-hex/adapter/order"
+	productAdapter "github.com/wittawat/go-hex/adapter/product"
+	userAdapter "github.com/wittawat/go-hex/adapter/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func InitializePgWithGorm() (*gorm.DB, error) {
+func InitPostgresDB() (*gorm.DB, error) {
 	godotenv.Load()
 	dns := os.Getenv("POSTGRES_URI")
 	log.Println("dns: ", dns)
@@ -23,15 +25,15 @@ func InitializePgWithGorm() (*gorm.DB, error) {
 }
 
 func Migration(db *gorm.DB) error {
-	if err := db.AutoMigrate(&entities.User{}); err != nil {
+	if err := db.AutoMigrate(&userAdapter.GormUser{}); err != nil {
 		return err
 	}
 
-	if err := db.AutoMigrate(&entities.Product{}); err != nil {
+	if err := db.AutoMigrate(&productAdapter.GormProduct{}); err != nil {
 		return err
 	}
 
-	if err := db.AutoMigrate(&entities.Order{}); err != nil {
+	if err := db.AutoMigrate(&orderAdapter.GormOrder{}); err != nil {
 		return err
 	}
 	return nil

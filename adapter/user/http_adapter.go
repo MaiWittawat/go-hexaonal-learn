@@ -2,39 +2,63 @@
 package userAdapter
 
 import (
+	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wittawat/go-hex/adapter/helper"
 	"github.com/wittawat/go-hex/core/entities"
-	"github.com/wittawat/go-hex/core/entities/request"
 	userPort "github.com/wittawat/go-hex/core/port/user"
 )
+
+// ------------------------ Entities ------------------------
+type UserRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
 type HttpUserHandler struct {
 	service userPort.UserService
 }
 
-func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
-	return &HttpUserHandler{service: service}
-}
-
-func newUserFromRequet(req *request.UserRequest) entities.User {
-	return entities.User{
+// ------------------------ Constructor ------------------------
+func newUserFromRequest(req *UserRequest) *entities.User {
+	return &entities.User{
 		Username: req.Username,
 		Email:    req.Email,
 		Password: req.Password,
 	}
 }
 
+func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
+	return &HttpUserHandler{service: service}
+}
+
+// ------------------------ Method ------------------------
 func (h *HttpUserHandler) Register(c *gin.Context) {
-	var userReq request.UserRequest
+	var userReq UserRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	user := newUserFromRequet(&userReq)
-	if err := h.service.Save(&user); err != nil {
+	user := newUserFromRequest(&userReq)
+	if err := h.service.Save(c.Request.Context(), user, "user"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Created user successfully"})
+}
+
+func (h *HttpUserHandler) SellerRegister(c *gin.Context) {
+	var userReq UserRequest
+	if err := c.ShouldBindJSON(&userReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	user := newUserFromRequest(&userReq)
+	if err := h.service.Save(c.Request.Context(), user, "seller"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -43,14 +67,15 @@ func (h *HttpUserHandler) Register(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) Login(c *gin.Context) {
-	var userReq request.UserRequest
+	var userReq UserRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	token, err := h.service.Login(&userReq)
+	token, err := h.service.Login(c.Request.Context(), newUserFromRequest(&userReq))
 	if token == "" {
+		log.Println("error: ", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Login fail invalid username, email or password"})
 		return
 	}
@@ -63,12 +88,8 @@ func (h *HttpUserHandler) Login(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) GetUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-	user, err := h.service.FindById(id)
+	id := c.Param("id")
+	user, err := h.service.FindById(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -77,7 +98,7 @@ func (h *HttpUserHandler) GetUser(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) GetAllUser(c *gin.Context) {
-	users, err := h.service.Find()
+	users, err := h.service.Find(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
 		return
@@ -86,56 +107,45 @@ func (h *HttpUserHandler) GetAllUser(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
-	emailVal, exists := c.Get("userEmail")
-	if !exists {
+	id := c.Param("id")
+	email, ok := helper.GetUserEmail(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	email, ok := emailVal.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userEmail in context"})
-		return
-	}
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
-		return
-	}
-
-	var userReq request.UserRequest
-	if err = c.ShouldBindJSON(&userReq); err != nil {
+	var userReq UserRequest
+	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
 
-	user := newUserFromRequet(&userReq)
-	if err = h.service.UpdateOne(&user, id, email); err != nil {
+	user := newUserFromRequest(&userReq)
+	token, claims, err := h.service.UpdateOne(c.Request.Context(), user, id, email)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Updated user successfully"})
-}
-
-func (h *HttpUserHandler) DeleteUser(c *gin.Context) {
-	emailVal, exists := c.Get("userEmail")
-	if !exists {
+	email, ok = claims["email"].(string)
+	if !ok {
+		log.Println("invalid token claims")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	email, ok := emailVal.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userEmail"})
-		return
-	}
+	c.Set("claims", claims)
+	c.Set("userEmail", email)
+	c.JSON(http.StatusOK, gin.H{"message": "Updated user successfully", "token": token})
+}
 
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+func (h *HttpUserHandler) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+	email, ok := helper.GetUserEmail(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	if err = h.service.DeleteOne(id, email); err != nil {
+	if err := h.service.DeleteOne(c.Request.Context(), id, email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -2,7 +2,7 @@
 package authAdapter
 
 import (
-	"errors"
+	"context"
 
 	userPort "github.com/wittawat/go-hex/core/port/user"
 )
@@ -16,7 +16,7 @@ func NewAuthZServiceImpl(userRepo userPort.UserRepository) *AuthZServiceImpl {
 }
 
 func (a *AuthZServiceImpl) Authorize(email string, requiredRoles ...string) (bool, error) {
-	user, err := a.userRepo.FindByEmail(email)
+	user, err := a.userRepo.FindByEmail(context.Background(), email)
 	if err != nil {
 		return false, err
 	}
@@ -26,5 +26,5 @@ func (a *AuthZServiceImpl) Authorize(email string, requiredRoles ...string) (boo
 			return true, nil
 		}
 	}
-	return false, errors.New("forbidden")
+	return false, err
 }

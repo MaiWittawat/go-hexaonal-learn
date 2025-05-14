@@ -1,11 +1,14 @@
 package entities
 
-import "gorm.io/gorm"
+import "time"
 
 type User struct {
-	gorm.Model
-	Username string `gorm:"username"`
-	Role     string `gorm:"default:\"user\""`
-	Email    string `gorm:"unique;not null"`
-	Password string `gorm:"password"`
+	ID        string
+	Username  string
+	Email     string
+	Password  string
+	Role      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
 }

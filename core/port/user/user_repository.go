@@ -1,12 +1,16 @@
 package userPort // secondary port
 
-import "github.com/wittawat/go-hex/core/entities"
+import (
+	"context"
+
+	"github.com/wittawat/go-hex/core/entities"
+)
 
 type UserRepository interface {
-	Save(user *entities.User) error
-	FindById(id int) (*entities.User, error)
-	FindByEmail(email string) (*entities.User, error)
-	Find() ([]entities.User, error)
-	UpdateOne(user *entities.User, id int) error
-	DeleteOne(id int) error
+	Save(ctx context.Context, user *entities.User) error
+	FindById(ctx context.Context, id string) (*entities.User, error)
+	FindByEmail(ctx context.Context, email string) (*entities.User, error)
+	Find(ctx context.Context) ([]entities.User, error)
+	UpdateOne(ctx context.Context, user *entities.User, id string) error
+	DeleteOne(ctx context.Context, id string) error
 }

@@ -42,7 +42,7 @@ func RequireRoles(tokenSvc authPort.JwtAuthNService, authZSvc authPort.JwtAuthZS
 		authorized, err := authZSvc.Authorize(email, roles...)
 		if !authorized || err != nil {
 			log.Println("invalid token claims: ", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
 		}

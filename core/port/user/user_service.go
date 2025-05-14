@@ -1,16 +1,18 @@
 package userPort // primary port
 
 import (
+	"context"
+
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/wittawat/go-hex/core/entities"
-	"github.com/wittawat/go-hex/core/entities/request"
 )
 
 type UserService interface {
-	Save(user *entities.User) error
-	FindById(id int) (*entities.User, error)
-	Find() ([]entities.User, error)
-	FindByEmail(email string) (*entities.User, error)
-	UpdateOne(user *entities.User, id int, email string) error
-	DeleteOne(id int, email string) error
-	Login(user *request.UserRequest) (string, error)
+	Save(ctx context.Context, user *entities.User, role string) error
+	FindById(ctx context.Context, id string) (*entities.User, error)
+	Find(ctx context.Context) ([]entities.User, error)
+	FindByEmail(ctx context.Context, email string) (*entities.User, error)
+	UpdateOne(ctx context.Context, user *entities.User, id string, email string) (string, jwt.MapClaims, error)
+	DeleteOne(ctx context.Context, id string, email string) error
+	Login(ctx context.Context, user *entities.User) (string, error)
 }

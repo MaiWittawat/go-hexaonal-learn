@@ -15,5 +15,5 @@ func RegisterProductHandler(app *gin.Engine, productHandler *productAdapter.Http
 	protected := app.Group("/products", middleware.JWTAuthMiddleware(authNSvc))
 	protected.POST("/", middleware.RequireRoles(authNSvc, authZSvc, "seller", "admin"), productHandler.CreateProduct)
 	protected.PATCH("/:id", middleware.RequireRoles(authNSvc, authZSvc, "seller", "admin"), productHandler.UpdateProduct)
-	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "sellter", "admin"), productHandler.DeleteProduct)
+	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "seller", "admin"), productHandler.DeleteProduct)
 }
