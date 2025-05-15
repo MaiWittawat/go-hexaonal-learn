@@ -16,7 +16,7 @@ func updateOrdedr(oldOrder *entities.Order, newOrder *entities.Order) *entities.
 	return newOrder
 }
 
-func EnsureUpdateOrder(oldOrder *entities.Order, newOrder *entities.Order) (*entities.Order, error) {
+func EnsureUpdateOrder(oldOrder *entities.Order, newOrder *entities.Order) *entities.Order {
 	order := updateOrdedr(oldOrder, newOrder)
-	return order, nil
+	return order
 }

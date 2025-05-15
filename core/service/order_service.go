@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
 	validator "github.com/wittawat/go-hex/core/internal/util/validate"
 	orderPort "github.com/wittawat/go-hex/core/port/order"
 	userPort "github.com/wittawat/go-hex/core/port/user"
+	"github.com/wittawat/go-hex/errs"
 )
 
 type OrderService struct {
@@ -24,15 +24,16 @@ func NewOrderService(orderRepo orderPort.OrderRepository, userRepo userPort.User
 func (s *OrderService) Create(ctx context.Context, order *entities.Order, email string) error {
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return err
+		log.Println("Error Create Order(findByEmail): ", err)
+		return errs.ErrOrderNotFound
 	}
 	order.UserID = user.ID
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = order.CreatedAt
 
-	fmt.Println("order in service: ", order)
 	if err := s.orderRepo.Save(ctx, order); err != nil {
-		return err
+		log.Println("Error Create Order(db): ", err)
+		return errs.ErrSaveOrder
 	}
 	return nil
 }
@@ -40,7 +41,8 @@ func (s *OrderService) Create(ctx context.Context, order *entities.Order, email 
 func (s *OrderService) GetByUser(ctx context.Context, userId string) ([]entities.Product, error) {
 	products, err := s.orderRepo.FindByUserId(ctx, userId)
 	if err != nil {
-		return nil, err
+		log.Println("Error GetByUser Order(findByUserId): ", err)
+		return nil, errs.ErrOrderNotFound
 	}
 	return products, nil
 }
@@ -48,23 +50,24 @@ func (s *OrderService) GetByUser(ctx context.Context, userId string) ([]entities
 func (s *OrderService) EditOne(ctx context.Context, newOrder *entities.Order, id string, email string) error {
 	oldOrder, err := s.orderRepo.FindById(ctx, id)
 	if err != nil {
-		return err
+		log.Println("Error EditOne Order(findById): ", err)
+		return errs.ErrOrderNotFound
 	}
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return err
+		log.Println("Error EditOne Order(findByEmail): ", err)
+		return errs.ErrOrderNotFound
 	}
 
 	if user.ID != oldOrder.UserID {
-		return errors.New("you can update only you order")
+		log.Println("Error EditOne Order(userId): ", err)
+		return errs.ErrForbidden
 	}
-	order, err := validator.EnsureUpdateOrder(oldOrder, newOrder)
-	if err != nil {
-		return err
-	}
+	order := validator.EnsureUpdateOrder(oldOrder, newOrder)
 
 	if err := s.orderRepo.UpdateOne(ctx, order, id); err != nil {
-		return err
+		log.Println("Error EditOne Order(db): ", err)
+		return errs.ErrUpdateOrder
 	}
 	return nil
 }
@@ -72,17 +75,21 @@ func (s *OrderService) EditOne(ctx context.Context, newOrder *entities.Order, id
 func (s *OrderService) DropOne(ctx context.Context, id string, email string) error {
 	oldOrder, err := s.orderRepo.FindById(ctx, id)
 	if err != nil {
-		return err
+		log.Println("Error DropOne Order(findById): ", err)
+		return errs.ErrOrderNotFound
 	}
 	o, err := s.orderRepo.FindByUserEmail(ctx, email)
 	if err != nil {
-		return err
+		log.Println("Error DropOne Order(findByEmail): ", err)
+		return errs.ErrOrderNotFound
 	}
 	if o.UserID != oldOrder.UserID {
-		return errors.New("you can delete only you order")
+		log.Println("Error DropOne Order(userId): ", err)
+		return errs.ErrForbidden
 	}
 	if err := s.orderRepo.DeleteOne(ctx, id); err != nil {
-		return err
+		log.Println("Error DropOne Order(db): ", err)
+		return errs.ErrDeleteOrder
 	}
 	return nil
 }

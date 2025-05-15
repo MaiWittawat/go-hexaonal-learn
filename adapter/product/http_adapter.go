@@ -42,7 +42,7 @@ func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
 	}
 	var productReq ProductRequest
 	if err := c.ShouldBindJSON(&productReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	product := newProductFromRequest(&productReq)
@@ -66,7 +66,7 @@ func (h *HttpProductHandler) GetProduct(c *gin.Context) {
 	id := c.Param("id")
 	product, err := h.service.GetById(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Get all product successfully", "product": product})
@@ -82,7 +82,7 @@ func (h *HttpProductHandler) UpdateProduct(c *gin.Context) {
 
 	var productReq ProductRequest
 	if err := c.ShouldBindJSON(&productReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -39,7 +39,7 @@ func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
 func (h *HttpUserHandler) Register(c *gin.Context) {
 	var userReq UserRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	user := newUserFromRequest(&userReq)
@@ -54,7 +54,7 @@ func (h *HttpUserHandler) Register(c *gin.Context) {
 func (h *HttpUserHandler) SellerRegister(c *gin.Context) {
 	var userReq UserRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	user := newUserFromRequest(&userReq)
@@ -76,7 +76,7 @@ func (h *HttpUserHandler) Login(c *gin.Context) {
 	token, err := h.service.Login(c.Request.Context(), newUserFromRequest(&userReq))
 	if token == "" {
 		log.Println("error: ", err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Login fail invalid username, email or password"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 	if err != nil {
@@ -100,7 +100,7 @@ func (h *HttpUserHandler) GetUser(c *gin.Context) {
 func (h *HttpUserHandler) GetAllUser(c *gin.Context) {
 	users, err := h.service.Find(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Get all user successfully", "users": users})
@@ -116,7 +116,7 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 
 	var userReq UserRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -128,7 +128,6 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 	}
 	email, ok = claims["email"].(string)
 	if !ok {
-		log.Println("invalid token claims")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
