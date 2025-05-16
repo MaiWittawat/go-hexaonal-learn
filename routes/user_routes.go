@@ -2,20 +2,21 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	authAdapter "github.com/wittawat/go-hex/adapter/auth"
+	authNAdapter "github.com/wittawat/go-hex/adapter/auth"
 	middleware "github.com/wittawat/go-hex/adapter/middleware"
-	userAdapter "github.com/wittawat/go-hex/adapter/user"
+	userAdapterInbound "github.com/wittawat/go-hex/adapter/user/inbound"
+	authZSvc "github.com/wittawat/go-hex/core/service"
 )
 
-func RegisterUserHandler(app *gin.Engine, userHandler *userAdapter.HttpUserHandler, authNSvc *authAdapter.AuthNServiceImpl, authZSvc *authAdapter.AuthZServiceImpl) {
+func RegisterUserHandler(app *gin.Engine, userHandler *userAdapterInbound.HttpUserHandler, authNAdapter *authNAdapter.AuthenService, authZSvc *authZSvc.AuthorizeService) {
 	public := app.Group("/")
 	public.POST("/register/user", userHandler.Register)
 	public.POST("/login", userHandler.Login)
 	public.POST("/register/seller", userHandler.SellerRegister)
 
-	protected := app.Group("/users", middleware.JWTAuthMiddleware(authNSvc))
+	protected := app.Group("/users", middleware.JWTAuthMiddleware(authNAdapter))
 	protected.GET("/:id", userHandler.GetUser)
-	protected.GET("/", middleware.RequireRoles(authNSvc, authZSvc, "admin"), userHandler.GetAllUser)
-	protected.PATCH("/:id", middleware.RequireRoles(authNSvc, authZSvc, "admin", "seller", "user"), userHandler.UpdateUser)
-	protected.DELETE("/:id", middleware.RequireRoles(authNSvc, authZSvc, "admin", "seller", "user"), userHandler.DeleteUser)
+	protected.GET("/", middleware.RequireRoles(authNAdapter, authZSvc, "admin"), userHandler.GetAllUser)
+	protected.PATCH("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.UpdateUser)
+	protected.DELETE("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.DeleteUser)
 }

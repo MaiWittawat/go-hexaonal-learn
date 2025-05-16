@@ -10,7 +10,7 @@ import (
 )
 
 // ------------------------ Entities ------------------------ //
-type ProductRequest struct {
+type productRequest struct {
 	Title  string `json:"title"`
 	Price  int32  `json:"price"`
 	Detail string `json:"detail"`
@@ -21,7 +21,7 @@ type HttpProductHandler struct {
 }
 
 // ------------------------ Constructor ------------------------ //
-func newProductFromRequest(req *ProductRequest) entities.Product {
+func newProductFromRequest(req *productRequest) entities.Product {
 	return entities.Product{
 		Title:  req.Title,
 		Price:  req.Price,
@@ -40,7 +40,7 @@ func (h *HttpProductHandler) CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	var productReq ProductRequest
+	var productReq productRequest
 	if err := c.ShouldBindJSON(&productReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -80,7 +80,7 @@ func (h *HttpProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	var productReq ProductRequest
+	var productReq productRequest
 	if err := c.ShouldBindJSON(&productReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -5,10 +5,13 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	jwtAdapter "github.com/wittawat/go-hex/adapter/auth"
-	orderAdapter "github.com/wittawat/go-hex/adapter/order"
-	productAdapter "github.com/wittawat/go-hex/adapter/product"
-	userAdapter "github.com/wittawat/go-hex/adapter/user"
+	jwtAuthNAdapter "github.com/wittawat/go-hex/adapter/auth"
+	orderAdapterInbound "github.com/wittawat/go-hex/adapter/order/inbound"
+	orderAdapterOutbound "github.com/wittawat/go-hex/adapter/order/outbound"
+	productAdapterInbound "github.com/wittawat/go-hex/adapter/product/inbound"
+	productAdapterOutbound "github.com/wittawat/go-hex/adapter/product/outbound"
+	userAdapterInbound "github.com/wittawat/go-hex/adapter/user/inbound"
+	userAdapterOutbound "github.com/wittawat/go-hex/adapter/user/outbound"
 	"github.com/wittawat/go-hex/core/service"
 	"github.com/wittawat/go-hex/db"
 	"github.com/wittawat/go-hex/routes"
@@ -23,26 +26,38 @@ func InitMongoApp(ctx context.Context, app *gin.Engine) (*mongo.Client, error) {
 	}
 	log.Println("connected mongo successfully")
 
+	redisClient := db.InitRedis()
+
 	// Authentication
-	authNSvc := jwtAdapter.NewAuthNServiceImpl()
+	authNSvc := jwtAuthNAdapter.NewAuthNServiceImpl()
 
 	// Repository
-	userRepo := userAdapter.NewMongoUserRepository(mgDB.Collection("users"))
-	productRepo := productAdapter.NewMongoProductRepository(mgDB.Collection("products"))
-	orderRepo := orderAdapter.NewMongoOrderRepository(mgDB.Collection("orders"))
+	userRepo := userAdapterOutbound.NewMongoUserRepository(mgDB.Collection("users"))
+	productRepo := productAdapterOutbound.NewMongoProductRepository(mgDB.Collection("products"))
+	orderRepo := orderAdapterOutbound.NewMongoOrderRepository(mgDB.Collection("orders"))
+
+	// Redis
+	userRedisRepo := userAdapterOutbound.NewRedisUserRepository(redisClient, userRepo)
+	productRedisRepo := productAdapterOutbound.NewRedisProductRepository(redisClient, productRepo)
+	orderRedisRepo := orderAdapterOutbound.NewRedisOrderRepository(redisClient, orderRepo)
 
 	// Authorization
-	authZSvc := jwtAdapter.NewAuthZServiceImpl(userRepo)
+	authZSvc := service.NewAuthZServiceImpl(userRepo)
 
-	// Service
-	userService := service.NewUserService(userRepo, productRepo, orderRepo, authNSvc)
-	productService := service.NewProductService(userRepo, productRepo, orderRepo)
-	orderService := service.NewOrderService(orderRepo, userRepo)
+	// Service by db
+	// userService := service.NewUserService(userRepo, productRepo, orderRepo, authNSvc)
+	// productService := service.NewProductService(userRepo, productRepo, orderRepo)
+	// orderService := service.NewOrderService(orderRepo, userRepo)
+
+	// Service by redis
+	userService := service.NewUserService(userRedisRepo, productRedisRepo, orderRedisRepo, authNSvc)
+	productService := service.NewProductService(userRedisRepo, productRedisRepo, orderRedisRepo)
+	orderService := service.NewOrderService(orderRedisRepo, userRedisRepo)
 
 	// Handler
-	userHandler := userAdapter.NewHttpUserHandler(userService)
-	productHandler := productAdapter.NewHttpProductHandler(productService)
-	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
+	userHandler := userAdapterInbound.NewHttpUserHandler(userService)
+	productHandler := productAdapterInbound.NewHttpProductHandler(productService)
+	orderHandler := orderAdapterInbound.NewHttpOrderHandler(orderService)
 
 	// Routes
 	routes.RegisterUserHandler(app, userHandler, authNSvc, authZSvc)

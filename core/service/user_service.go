@@ -99,7 +99,7 @@ func (s *UserService) DeleteOne(ctx context.Context, id string, email string) er
 		return errs.ErrForbidden
 	}
 
-	if err := s.orderRepo.DeleteAllByUser(ctx, id); err != nil {
+	if err := s.orderRepo.DeleteAllOrderByUser(ctx, id); err != nil {
 		log.Println("Error DeleteOne User(orderDB): ", err)
 		return errs.ErrDeleteAllOrderByUser
 	}

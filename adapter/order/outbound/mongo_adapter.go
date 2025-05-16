@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	orderPort "github.com/wittawat/go-hex/core/port/order"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ------------------------ Entities ------------------------
-type MongoOrder struct {
+type mongoOrder struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	UserID    primitive.ObjectID `bson:"user_id"`
 	ProductID primitive.ObjectID `bson:"product_id"`
@@ -21,17 +22,17 @@ type MongoOrder struct {
 	DeletedAt *time.Time         `bson:"deleted_at"`
 }
 
-type MongoOrderRepository struct {
+type mongoOrderRepository struct {
 	collection *mongo.Collection
 }
 
 // ------------------------ Constructor ------------------------
-func NewMongoOrderRepository(col *mongo.Collection) *MongoOrderRepository {
-	return &MongoOrderRepository{collection: col}
+func NewMongoOrderRepository(col *mongo.Collection) orderPort.OrderRepository {
+	return &mongoOrderRepository{collection: col}
 }
 
 // ------------------------ Private Function -----------------------
-func entities2MongoOrder(order *entities.Order) (*MongoOrder, error) {
+func entities2MongoOrder(order *entities.Order) (*mongoOrder, error) {
 	userID, err := primitive.ObjectIDFromHex(order.UserID)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func entities2MongoOrder(order *entities.Order) (*MongoOrder, error) {
 		return nil, err
 	}
 
-	return &MongoOrder{
+	return &mongoOrder{
 		UserID:    userID,
 		ProductID: productID,
 		CreatedAt: order.CreatedAt,
@@ -51,7 +52,7 @@ func entities2MongoOrder(order *entities.Order) (*MongoOrder, error) {
 	}, nil
 }
 
-func mongo2EntitiesOrder(mo *MongoOrder) *entities.Order {
+func mongo2EntitiesOrder(mo *mongoOrder) *entities.Order {
 	return &entities.Order{
 		ID:        string(mo.ID.Hex()),
 		UserID:    string(mo.UserID.Hex()),
@@ -77,7 +78,7 @@ func toEntitiesProduct(raw bson.M) (*entities.Product, error) {
 }
 
 // ------------------------ Method ------------------------
-func (m *MongoOrderRepository) Save(ctx context.Context, order *entities.Order) error {
+func (m *mongoOrderRepository) Save(ctx context.Context, order *entities.Order) error {
 	mo, err := entities2MongoOrder(order)
 	if err != nil {
 		return err
@@ -86,7 +87,7 @@ func (m *MongoOrderRepository) Save(ctx context.Context, order *entities.Order) 
 	return err
 }
 
-func (m *MongoOrderRepository) UpdateOne(ctx context.Context, order *entities.Order, id string) error {
+func (m *mongoOrderRepository) UpdateOne(ctx context.Context, order *entities.Order, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -100,7 +101,7 @@ func (m *MongoOrderRepository) UpdateOne(ctx context.Context, order *entities.Or
 	return err
 }
 
-func (m *MongoOrderRepository) DeleteOne(ctx context.Context, id string) error {
+func (m *mongoOrderRepository) DeleteOne(ctx context.Context, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -109,7 +110,7 @@ func (m *MongoOrderRepository) DeleteOne(ctx context.Context, id string) error {
 	return err
 }
 
-func (m *MongoOrderRepository) DeleteAllByUser(ctx context.Context, userId string) error {
+func (m *mongoOrderRepository) DeleteAllOrderByUser(ctx context.Context, userId string) error {
 	objUserID, err := primitive.ObjectIDFromHex(userId)
 	if err != nil {
 		return err
@@ -118,7 +119,7 @@ func (m *MongoOrderRepository) DeleteAllByUser(ctx context.Context, userId strin
 	return err
 }
 
-func (m *MongoOrderRepository) DeleteAllByProduct(ctx context.Context, productId string) error {
+func (m *mongoOrderRepository) DeleteAllOrderByProduct(ctx context.Context, productId string) error {
 	objProductID, err := primitive.ObjectIDFromHex(productId)
 	if err != nil {
 		return err
@@ -127,21 +128,21 @@ func (m *MongoOrderRepository) DeleteAllByProduct(ctx context.Context, productId
 	return err
 }
 
-func (m *MongoOrderRepository) FindById(ctx context.Context, id string) (*entities.Order, error) {
+func (m *mongoOrderRepository) FindById(ctx context.Context, id string) (*entities.Order, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 	filter := bson.M{"_id": objID}
-	var mo MongoOrder
+	var mo mongoOrder
 	if err := m.collection.FindOne(ctx, filter).Decode(&mo); err != nil {
 		return nil, err
 	}
 	return mongo2EntitiesOrder(&mo), nil
 }
 
-func (m *MongoOrderRepository) FindByUserEmail(ctx context.Context, email string) (*entities.Order, error) {
-	var mo MongoOrder
+func (m *mongoOrderRepository) FindByUserEmail(ctx context.Context, email string) (*entities.Order, error) {
+	var mo mongoOrder
 	filter := bson.M{"email": email}
 	if err := m.collection.FindOne(ctx, filter).Decode(&mo); err != nil {
 		return nil, err
@@ -150,7 +151,7 @@ func (m *MongoOrderRepository) FindByUserEmail(ctx context.Context, email string
 
 }
 
-func (m *MongoOrderRepository) FindByUserId(ctx context.Context, userID string) ([]entities.Product, error) {
+func (m *mongoOrderRepository) FindByUserId(ctx context.Context, userID string) ([]entities.Product, error) {
 	objUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, err

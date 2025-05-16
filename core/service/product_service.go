@@ -107,7 +107,7 @@ func (s *ProductService) DropOne(ctx context.Context, id string, email string) e
 		log.Println("Error DropOne Product(userId): ", err)
 		return errs.ErrForbidden
 	}
-	if err := s.orderRepo.DeleteAllByProduct(ctx, id); err != nil {
+	if err := s.orderRepo.DeleteAllOrderByProduct(ctx, id); err != nil {
 		log.Println("Error DropOne Product(orderDB): ", err)
 		return errs.ErrDeleteAllOrderByProduct
 	}

@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	productPort "github.com/wittawat/go-hex/core/port/product"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ------------------------ Entities ------------------------
-type MongoProduct struct {
+type mongoProduct struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Title     string             `bson:"title"`
 	Price     int32              `bson:"price"`
@@ -22,22 +23,22 @@ type MongoProduct struct {
 	DeletedAt *time.Time         `bson:"deleted_at"`
 }
 
-type MongoProductRepository struct {
+type mongoProductRepository struct {
 	collection *mongo.Collection
 }
 
 // ------------------------ Constructor ------------------------
-func NewMongoProductRepository(col *mongo.Collection) *MongoProductRepository {
-	return &MongoProductRepository{collection: col}
+func NewMongoProductRepository(col *mongo.Collection) productPort.ProductRepository {
+	return &mongoProductRepository{collection: col}
 }
 
 // ------------------------ Private Function ------------------------
-func entities2MongoProduct(p *entities.Product) (*MongoProduct, error) {
+func entities2MongoProduct(p *entities.Product) (*mongoProduct, error) {
 	objUserID, err := primitive.ObjectIDFromHex(p.CreatedBy)
 	if err != nil {
 		return nil, err
 	}
-	return &MongoProduct{
+	return &mongoProduct{
 		Title:     p.Title,
 		Price:     p.Price,
 		Detail:    p.Detail,
@@ -48,7 +49,7 @@ func entities2MongoProduct(p *entities.Product) (*MongoProduct, error) {
 	}, nil
 }
 
-func mongo2EntitiesProduct(mp *MongoProduct) *entities.Product {
+func mongo2EntitiesProduct(mp *mongoProduct) *entities.Product {
 	return &entities.Product{
 		ID:        string(mp.ID.Hex()),
 		Title:     mp.Title,
@@ -62,7 +63,7 @@ func mongo2EntitiesProduct(mp *MongoProduct) *entities.Product {
 }
 
 // ------------------------ Method ------------------------
-func (m *MongoProductRepository) Save(ctx context.Context, p *entities.Product) error {
+func (m *mongoProductRepository) Save(ctx context.Context, p *entities.Product) error {
 	mp, err := entities2MongoProduct(p)
 	if err != nil {
 		return err
@@ -73,7 +74,7 @@ func (m *MongoProductRepository) Save(ctx context.Context, p *entities.Product) 
 	return nil
 }
 
-func (m *MongoProductRepository) UpdateOne(ctx context.Context, p *entities.Product, id string) error {
+func (m *mongoProductRepository) UpdateOne(ctx context.Context, p *entities.Product, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -87,7 +88,7 @@ func (m *MongoProductRepository) UpdateOne(ctx context.Context, p *entities.Prod
 	return err
 }
 
-func (m *MongoProductRepository) DeleteOne(ctx context.Context, id string) error {
+func (m *mongoProductRepository) DeleteOne(ctx context.Context, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func (m *MongoProductRepository) DeleteOne(ctx context.Context, id string) error
 	return err
 }
 
-func (m *MongoProductRepository) DeleteAll(ctx context.Context, userId string) error {
+func (m *mongoProductRepository) DeleteAll(ctx context.Context, userId string) error {
 	objUserID, err := primitive.ObjectIDFromHex(userId)
 	if err != nil {
 		return err
@@ -108,7 +109,7 @@ func (m *MongoProductRepository) DeleteAll(ctx context.Context, userId string) e
 	return err
 }
 
-func (m *MongoProductRepository) FindById(ctx context.Context, id string) (*entities.Product, error) {
+func (m *mongoProductRepository) FindById(ctx context.Context, id string) (*entities.Product, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -116,7 +117,7 @@ func (m *MongoProductRepository) FindById(ctx context.Context, id string) (*enti
 	filter := bson.M{
 		"_id": objID,
 	}
-	var mp MongoProduct
+	var mp mongoProduct
 	if err := m.collection.FindOne(ctx, filter).Decode(&mp); err != nil {
 		return nil, err
 	}
@@ -124,7 +125,7 @@ func (m *MongoProductRepository) FindById(ctx context.Context, id string) (*enti
 	return mongo2EntitiesProduct(&mp), nil
 }
 
-func (m *MongoProductRepository) Find(ctx context.Context) ([]entities.Product, error) {
+func (m *mongoProductRepository) Find(ctx context.Context) ([]entities.Product, error) {
 	cursor, err := m.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -133,7 +134,7 @@ func (m *MongoProductRepository) Find(ctx context.Context) ([]entities.Product, 
 
 	var products []entities.Product
 	for cursor.Next(ctx) {
-		var mp MongoProduct
+		var mp mongoProduct
 		if err := cursor.Decode(&mp); err != nil {
 			continue
 		}

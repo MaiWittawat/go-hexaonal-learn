@@ -1,45 +1,62 @@
 package bootstrap
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
-	jwtAdapter "github.com/wittawat/go-hex/adapter/auth"
-	orderAdapter "github.com/wittawat/go-hex/adapter/order"
-	productAdapter "github.com/wittawat/go-hex/adapter/product"
-	userAdapter "github.com/wittawat/go-hex/adapter/user"
+	jwtAuthNAdapter "github.com/wittawat/go-hex/adapter/auth"
+	orderAdapterInbound "github.com/wittawat/go-hex/adapter/order/inbound"
+	orderAdapterOutbound "github.com/wittawat/go-hex/adapter/order/outbound"
+	productAdapterInbound "github.com/wittawat/go-hex/adapter/product/inbound"
+	productAdapterOutbound "github.com/wittawat/go-hex/adapter/product/outbound"
+	userAdapterInbound "github.com/wittawat/go-hex/adapter/user/inbound"
+	userAdapterOutbound "github.com/wittawat/go-hex/adapter/user/outbound"
 	"github.com/wittawat/go-hex/core/service"
-	database "github.com/wittawat/go-hex/db"
+	"github.com/wittawat/go-hex/db"
 	"github.com/wittawat/go-hex/routes"
 )
 
 func InitPostgresApp(app *gin.Engine) error {
-	pgDB, err := database.InitPostgresDB()
+	pgDB, err := db.InitPostgresDB()
 	if err != nil {
 		return err
 	}
-	if err := database.Migration(pgDB); err != nil {
-		return err
-	}
+	log.Println("connected postgres successfully")
+
+	redisClient := db.InitRedis()
 
 	// Authentication
-	authNSvc := jwtAdapter.NewAuthNServiceImpl()
+	authNSvc := jwtAuthNAdapter.NewAuthNServiceImpl()
 
 	// Repository
-	userRepo := userAdapter.NewGormUserRepository(pgDB)
-	productRepo := productAdapter.NewGormProductRepository(pgDB)
-	orderRepo := orderAdapter.NewGormOrderRepository(pgDB)
+	userRepo := userAdapterOutbound.NewGormUserRepository(pgDB)
+	productRepo := productAdapterOutbound.NewGormProductRepository(pgDB)
+	orderRepo := orderAdapterOutbound.NewGormOrderRepository(pgDB)
+
+	// Redis
+	userRedisRepo := userAdapterOutbound.NewRedisUserRepository(redisClient, userRepo)
+	productRedisRepo := productAdapterOutbound.NewRedisProductRepository(redisClient, productRepo)
+	orderRedisRepo := orderAdapterOutbound.NewRedisOrderRepository(redisClient, orderRepo)
+
+	// productRedisRepo := productAdapterOutbound.NewRedisProductRepository(redisClient, productRepo)
 
 	// Authorization
-	authZSvc := jwtAdapter.NewAuthZServiceImpl(userRepo)
+	authZSvc := service.NewAuthZServiceImpl(userRepo)
 
 	// Service
-	userService := service.NewUserService(userRepo, productRepo, orderRepo, authNSvc)
-	productService := service.NewProductService(userRepo, productRepo, orderRepo)
-	orderService := service.NewOrderService(orderRepo, userRepo)
+	// userService := service.NewUserService(userRepo, productRepo, orderRepo, authNSvc)
+	// productService := service.NewProductService(userRepo, productRepo, orderRepo)
+	// orderService := service.NewOrderService(orderRepo, userRepo)
+
+	// Service redis
+	userService := service.NewUserService(userRedisRepo, productRedisRepo, orderRedisRepo, authNSvc)
+	productService := service.NewProductService(userRedisRepo, productRedisRepo, orderRedisRepo)
+	orderService := service.NewOrderService(orderRedisRepo, userRedisRepo)
 
 	// Handler
-	userHandler := userAdapter.NewHttpUserHandler(userService)
-	productHandler := productAdapter.NewHttpProductHandler(productService)
-	orderHandler := orderAdapter.NewHttpOrderHandler(orderService)
+	userHandler := userAdapterInbound.NewHttpUserHandler(userService)
+	productHandler := productAdapterInbound.NewHttpProductHandler(productService)
+	orderHandler := orderAdapterInbound.NewHttpOrderHandler(orderService)
 
 	// Routes
 	routes.RegisterUserHandler(app, userHandler, authNSvc, authZSvc)

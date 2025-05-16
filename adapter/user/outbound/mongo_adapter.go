@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	userPort "github.com/wittawat/go-hex/core/port/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +15,7 @@ import (
 )
 
 // ------------------------ Entities ------------------------
-type MongoUser struct {
+type mongoUser struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Username  string             `bson:"username"`
 	Email     string             `bson:"email"`
@@ -25,18 +26,18 @@ type MongoUser struct {
 	DeletedAt *time.Time         `bson:"deleted_at"`
 }
 
-type MongoUserRepository struct {
+type mongoUserRepository struct {
 	collection *mongo.Collection
 }
 
 // ------------------------ Constructor ------------------------
-func NewMongoUserRepository(col *mongo.Collection) *MongoUserRepository {
-	return &MongoUserRepository{collection: col}
+func NewMongoUserRepository(col *mongo.Collection) userPort.UserRepository {
+	return &mongoUserRepository{collection: col}
 }
 
 // ------------------------ Private Function -----------------------
-func entities2MongoUser(user *entities.User) *MongoUser {
-	return &MongoUser{
+func entities2MongoUser(user *entities.User) *mongoUser {
+	return &mongoUser{
 		Username:  user.Username,
 		Email:     user.Email,
 		Password:  user.Password,
@@ -47,7 +48,7 @@ func entities2MongoUser(user *entities.User) *MongoUser {
 	}
 }
 
-func mongo2EntitiesUser(mg *MongoUser) *entities.User {
+func mongo2EntitiesUser(mg *mongoUser) *entities.User {
 	return &entities.User{
 		ID:        string(mg.ID.Hex()),
 		Username:  mg.Username,
@@ -61,7 +62,7 @@ func mongo2EntitiesUser(mg *MongoUser) *entities.User {
 }
 
 // ------------------------ Method ------------------------
-func (m *MongoUserRepository) SetEmailUniqueIndex() error {
+func (m *mongoUserRepository) setEmailUniqueIndex() error {
 	indexModel := mongo.IndexModel{
 		Keys:    bson.M{"email": 1},
 		Options: options.Index().SetUnique(true),
@@ -75,8 +76,8 @@ func (m *MongoUserRepository) SetEmailUniqueIndex() error {
 	return nil
 }
 
-func (m *MongoUserRepository) Save(ctx context.Context, user *entities.User) error {
-	if err := m.SetEmailUniqueIndex(); err != nil {
+func (m *mongoUserRepository) Save(ctx context.Context, user *entities.User) error {
+	if err := m.setEmailUniqueIndex(); err != nil {
 		return err
 	}
 	_, err := m.collection.InsertOne(ctx, entities2MongoUser(user))
@@ -86,7 +87,7 @@ func (m *MongoUserRepository) Save(ctx context.Context, user *entities.User) err
 	return err
 }
 
-func (m *MongoUserRepository) UpdateOne(ctx context.Context, user *entities.User, id string) error {
+func (m *mongoUserRepository) UpdateOne(ctx context.Context, user *entities.User, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func (m *MongoUserRepository) UpdateOne(ctx context.Context, user *entities.User
 	return err
 }
 
-func (m *MongoUserRepository) DeleteOne(ctx context.Context, id string) error {
+func (m *mongoUserRepository) DeleteOne(ctx context.Context, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func (m *MongoUserRepository) DeleteOne(ctx context.Context, id string) error {
 	return err
 }
 
-func (m *MongoUserRepository) FindById(ctx context.Context, id string) (*entities.User, error) {
+func (m *mongoUserRepository) FindById(ctx context.Context, id string) (*entities.User, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -113,7 +114,7 @@ func (m *MongoUserRepository) FindById(ctx context.Context, id string) (*entitie
 	filter := bson.M{
 		"_id": objID,
 	}
-	var mu MongoUser
+	var mu mongoUser
 	if err := m.collection.FindOne(ctx, filter).Decode(&mu); err != nil {
 		log.Println("Fail to get user by id: ", err)
 		return nil, err
@@ -121,11 +122,11 @@ func (m *MongoUserRepository) FindById(ctx context.Context, id string) (*entitie
 	return mongo2EntitiesUser(&mu), nil
 }
 
-func (m *MongoUserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
+func (m *mongoUserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
 	filter := bson.M{
 		"email": email,
 	}
-	var mu MongoUser
+	var mu mongoUser
 	if err := m.collection.FindOne(ctx, filter).Decode(&mu); err != nil {
 		log.Println("Fail to get user by email: ", err)
 		return nil, err
@@ -133,7 +134,7 @@ func (m *MongoUserRepository) FindByEmail(ctx context.Context, email string) (*e
 	return mongo2EntitiesUser(&mu), nil
 }
 
-func (m *MongoUserRepository) Find(ctx context.Context) ([]entities.User, error) {
+func (m *mongoUserRepository) Find(ctx context.Context) ([]entities.User, error) {
 	cursor, err := m.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -142,7 +143,7 @@ func (m *MongoUserRepository) Find(ctx context.Context) ([]entities.User, error)
 
 	var users []entities.User
 	for cursor.Next(ctx) {
-		var mu MongoUser
+		var mu mongoUser
 		if err := cursor.Decode(&mu); err != nil {
 			continue
 		}

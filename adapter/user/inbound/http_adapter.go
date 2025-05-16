@@ -12,7 +12,7 @@ import (
 )
 
 // ------------------------ Entities ------------------------
-type UserRequest struct {
+type userRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -23,7 +23,7 @@ type HttpUserHandler struct {
 }
 
 // ------------------------ Constructor ------------------------
-func newUserFromRequest(req *UserRequest) *entities.User {
+func newUserFromRequest(req *userRequest) *entities.User {
 	return &entities.User{
 		Username: req.Username,
 		Email:    req.Email,
@@ -37,7 +37,7 @@ func NewHttpUserHandler(service userPort.UserService) *HttpUserHandler {
 
 // ------------------------ Method ------------------------
 func (h *HttpUserHandler) Register(c *gin.Context) {
-	var userReq UserRequest
+	var userReq userRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -52,7 +52,7 @@ func (h *HttpUserHandler) Register(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) SellerRegister(c *gin.Context) {
-	var userReq UserRequest
+	var userReq userRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -67,7 +67,7 @@ func (h *HttpUserHandler) SellerRegister(c *gin.Context) {
 }
 
 func (h *HttpUserHandler) Login(c *gin.Context) {
-	var userReq UserRequest
+	var userReq userRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -114,7 +114,7 @@ func (h *HttpUserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var userReq UserRequest
+	var userReq userRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

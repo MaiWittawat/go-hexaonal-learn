@@ -11,7 +11,7 @@ import (
 )
 
 // ------------------------ Entities ------------------------ //
-type OrderRequest struct {
+type orderRequest struct {
 	UserID    string
 	ProductID string `json:"product_id"`
 }
@@ -25,7 +25,7 @@ func NewHttpOrderHandler(service orderPort.OrderService) *HttpOrderHandler {
 	return &HttpOrderHandler{service: service}
 }
 
-func newOrderFromRequest(req *OrderRequest) entities.Order {
+func newOrderFromRequest(req *orderRequest) entities.Order {
 	return entities.Order{
 		UserID:    req.UserID,
 		ProductID: req.ProductID,
@@ -40,7 +40,7 @@ func (h *HttpOrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	var orderReq OrderRequest
+	var orderReq orderRequest
 	if err := c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -74,7 +74,7 @@ func (h *HttpOrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	var orderReq OrderRequest
+	var orderReq orderRequest
 	if err := c.ShouldBindJSON(&orderReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

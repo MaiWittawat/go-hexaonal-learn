@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	userPort "github.com/wittawat/go-hex/core/port/user"
 	"gorm.io/gorm"
 )
 
 // ------------------------ Entities ------------------------
-type GormUser struct {
+type gormUser struct {
 	ID        uint           `gorm:"primaryKey;autoIncrement"`
 	Role      string         `gorm:"role"`
 	Username  string         `gorm:"username"`
@@ -22,26 +23,28 @@ type GormUser struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (GormUser) TableName() string {
+// Set table name in postgresql database
+func (gormUser) TableName() string {
 	return "users"
 }
 
-type GormUserRepository struct {
+type gormUserRepository struct {
 	db *gorm.DB
 }
 
 // ------------------------ Constructor ------------------------
-func NewGormUserRepository(db *gorm.DB) *GormUserRepository {
-	return &GormUserRepository{db: db}
+func NewGormUserRepository(db *gorm.DB) userPort.UserRepository {
+	db.AutoMigrate(&gormUser{})
+	return &gormUserRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
-func entities2GormUser(u *entities.User) (*GormUser, error) {
+func entities2GormUser(u *entities.User) (*gormUser, error) {
 	var deletedAt gorm.DeletedAt
 	if u.DeletedAt != nil {
 		deletedAt = gorm.DeletedAt{Time: *u.DeletedAt}
 	}
-	return &GormUser{
+	return &gormUser{
 		Username:  u.Username,
 		Email:     u.Email,
 		Password:  u.Password,
@@ -52,7 +55,7 @@ func entities2GormUser(u *entities.User) (*GormUser, error) {
 	}, nil
 }
 
-func gorm2EntitiesUser(gu *GormUser) *entities.User {
+func gorm2EntitiesUser(gu *gormUser) *entities.User {
 	id := strconv.FormatUint(uint64(gu.ID), 10)
 	return &entities.User{
 		ID:        id,
@@ -67,7 +70,7 @@ func gorm2EntitiesUser(gu *GormUser) *entities.User {
 }
 
 // ------------------------ Method ------------------------
-func (g *GormUserRepository) Save(ctx context.Context, user *entities.User) error {
+func (g *gormUserRepository) Save(ctx context.Context, user *entities.User) error {
 	gu, err := entities2GormUser(user)
 	if err != nil {
 		return err
@@ -76,22 +79,22 @@ func (g *GormUserRepository) Save(ctx context.Context, user *entities.User) erro
 	return result.Error
 }
 
-func (g *GormUserRepository) UpdateOne(ctx context.Context, user *entities.User, id string) error {
+func (g *gormUserRepository) UpdateOne(ctx context.Context, user *entities.User, id string) error {
 	gu, err := entities2GormUser(user)
 	if err != nil {
 		return err
 	}
-	result := g.db.WithContext(ctx).Model(&GormUser{}).Where("id = ?", id).Select("username", "email", "password", "updated_at").Updates(gu)
+	result := g.db.WithContext(ctx).Model(&gormUser{}).Where("id = ?", id).Select("username", "email", "password", "updated_at").Updates(gu)
 	return result.Error
 }
 
-func (g *GormUserRepository) DeleteOne(ctx context.Context, id string) error {
-	result := g.db.WithContext(ctx).Delete(&GormUser{}, id)
+func (g *gormUserRepository) DeleteOne(ctx context.Context, id string) error {
+	result := g.db.WithContext(ctx).Delete(&gormUser{}, id)
 	return result.Error
 }
 
-func (g *GormUserRepository) FindById(ctx context.Context, id string) (*entities.User, error) {
-	var gu GormUser
+func (g *gormUserRepository) FindById(ctx context.Context, id string) (*entities.User, error) {
+	var gu gormUser
 	result := g.db.WithContext(ctx).First(&gu, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -100,8 +103,8 @@ func (g *GormUserRepository) FindById(ctx context.Context, id string) (*entities
 	return user, nil
 }
 
-func (g *GormUserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
-	var gu GormUser
+func (g *gormUserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
+	var gu gormUser
 	result := g.db.WithContext(ctx).Where("email=?", email).First(&gu)
 	if result.Error != nil {
 		return nil, result.Error
@@ -110,9 +113,9 @@ func (g *GormUserRepository) FindByEmail(ctx context.Context, email string) (*en
 	return user, nil
 }
 
-func (g *GormUserRepository) Find(ctx context.Context) ([]entities.User, error) {
+func (g *gormUserRepository) Find(ctx context.Context) ([]entities.User, error) {
 	var users []entities.User
-	var gormUsers []GormUser
+	var gormUsers []gormUser
 	result := g.db.WithContext(ctx).Find(&gormUsers)
 	if result.Error != nil {
 		return nil, result.Error

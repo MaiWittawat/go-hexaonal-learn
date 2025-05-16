@@ -14,6 +14,6 @@ type OrderRepository interface {
 	FindById(ctx context.Context, id string) (*entities.Order, error)
 	UpdateOne(ctx context.Context, order *entities.Order, id string) error
 	DeleteOne(ctx context.Context, id string) error
-	DeleteAllByUser(ctx context.Context, userId string) error
-	DeleteAllByProduct(ctx context.Context, productId string) error
+	DeleteAllOrderByUser(ctx context.Context, userId string) error
+	DeleteAllOrderByProduct(ctx context.Context, productId string) error
 }

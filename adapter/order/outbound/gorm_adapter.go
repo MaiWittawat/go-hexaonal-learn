@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	orderPort "github.com/wittawat/go-hex/core/port/order"
 	"gorm.io/gorm"
 )
 
 // ------------------------ Entities ------------------------
-type GormOrder struct {
+type gormOrder struct {
 	ID        uint           `gorm:"primaryKey;autoIncrement"`
 	UserID    uint           `gorm:"user_id"`
 	ProductID uint           `gorm:"product_id"`
@@ -19,21 +20,23 @@ type GormOrder struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (GormOrder) TableName() string {
+// Set table name in postgresql database
+func (gormOrder) TableName() string {
 	return "orders"
 }
 
-type GormOrderRepository struct {
+type gormOrderRepository struct {
 	db *gorm.DB
 }
 
 // ------------------------ Constructor ------------------------
-func NewGormOrderRepository(db *gorm.DB) *GormOrderRepository {
-	return &GormOrderRepository{db: db}
+func NewGormOrderRepository(db *gorm.DB) orderPort.OrderRepository {
+	db.AutoMigrate(&gormOrder{})
+	return &gormOrderRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
-func entities2GormOrder(o *entities.Order) (*GormOrder, error) {
+func entities2GormOrder(o *entities.Order) (*gormOrder, error) {
 	userID, err := strconv.Atoi(o.UserID)
 	if err != nil {
 		return nil, err
@@ -47,7 +50,7 @@ func entities2GormOrder(o *entities.Order) (*GormOrder, error) {
 	if o.DeletedAt != nil {
 		deletedAt = gorm.DeletedAt{Time: *o.DeletedAt}
 	}
-	return &GormOrder{
+	return &gormOrder{
 		UserID:    uint(userID),
 		ProductID: uint(productID),
 		CreatedAt: o.CreatedAt,
@@ -56,7 +59,7 @@ func entities2GormOrder(o *entities.Order) (*GormOrder, error) {
 	}, nil
 }
 
-func gorm2EntitiesOrder(gr *GormOrder) *entities.Order {
+func gorm2EntitiesOrder(gr *gormOrder) *entities.Order {
 	id := strconv.FormatUint(uint64(gr.ID), 10)
 	userID := strconv.FormatUint(uint64(gr.UserID), 10)
 	productID := strconv.FormatUint(uint64(gr.ProductID), 10)
@@ -71,7 +74,7 @@ func gorm2EntitiesOrder(gr *GormOrder) *entities.Order {
 }
 
 // ------------------------ Method ------------------------
-func (g *GormOrderRepository) Save(ctx context.Context, order *entities.Order) error {
+func (g *gormOrderRepository) Save(ctx context.Context, order *entities.Order) error {
 	gr, err := entities2GormOrder(order)
 	if err != nil {
 		return err
@@ -80,40 +83,40 @@ func (g *GormOrderRepository) Save(ctx context.Context, order *entities.Order) e
 	return result.Error
 }
 
-func (g *GormOrderRepository) UpdateOne(ctx context.Context, order *entities.Order, id string) error {
+func (g *gormOrderRepository) UpdateOne(ctx context.Context, order *entities.Order, id string) error {
 	gr, err := entities2GormOrder(order)
 	if err != nil {
 		return err
 	}
-	result := g.db.WithContext(ctx).Model(&GormOrder{}).Where("id = ?", id).Select("user_id", "product_id", "updated_at").Updates(gr)
+	result := g.db.WithContext(ctx).Model(&gormOrder{}).Where("id = ?", id).Select("user_id", "product_id", "updated_at").Updates(gr)
 	return result.Error
 }
 
-func (g *GormOrderRepository) DeleteOne(ctx context.Context, id string) error {
-	result := g.db.WithContext(ctx).Delete(&GormOrder{}, id)
+func (g *gormOrderRepository) DeleteOne(ctx context.Context, id string) error {
+	result := g.db.WithContext(ctx).Delete(&gormOrder{}, id)
 	return result.Error
 }
 
-func (g *GormOrderRepository) DeleteAllByUser(ctx context.Context, userId string) error {
+func (g *gormOrderRepository) DeleteAllOrderByUser(ctx context.Context, userId string) error {
 	userIDStr, err := strconv.Atoi(userId)
 	if err != nil {
 		return err
 	}
-	result := g.db.WithContext(ctx).Where("user_id = ?", uint(userIDStr)).Delete(&GormOrder{})
+	result := g.db.WithContext(ctx).Where("user_id = ?", uint(userIDStr)).Delete(&gormOrder{})
 	return result.Error
 }
 
-func (g *GormOrderRepository) DeleteAllByProduct(ctx context.Context, productId string) error {
+func (g *gormOrderRepository) DeleteAllOrderByProduct(ctx context.Context, productId string) error {
 	productIDStr, err := strconv.Atoi(productId)
 	if err != nil {
 		return err
 	}
-	result := g.db.WithContext(ctx).Where("product_id = ?", uint(productIDStr)).Delete(&GormOrder{})
+	result := g.db.WithContext(ctx).Where("product_id = ?", uint(productIDStr)).Delete(&gormOrder{})
 	return result.Error
 }
 
-func (g *GormOrderRepository) FindById(ctx context.Context, id string) (*entities.Order, error) {
-	var gr GormOrder
+func (g *gormOrderRepository) FindById(ctx context.Context, id string) (*entities.Order, error) {
+	var gr gormOrder
 	result := g.db.WithContext(ctx).First(&gr, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -121,8 +124,8 @@ func (g *GormOrderRepository) FindById(ctx context.Context, id string) (*entitie
 	return gorm2EntitiesOrder(&gr), nil
 }
 
-func (g *GormOrderRepository) FindByUserEmail(ctx context.Context, email string) (*entities.Order, error) {
-	var gr GormOrder
+func (g *gormOrderRepository) FindByUserEmail(ctx context.Context, email string) (*entities.Order, error) {
+	var gr gormOrder
 	result := g.db.WithContext(ctx).First(&gr).Where("email = ?", email)
 	if result.Error != nil {
 		return nil, result.Error
@@ -130,7 +133,7 @@ func (g *GormOrderRepository) FindByUserEmail(ctx context.Context, email string)
 	return gorm2EntitiesOrder(&gr), nil
 }
 
-func (g *GormOrderRepository) FindByUserId(ctx context.Context, userId string) ([]entities.Product, error) {
+func (g *gormOrderRepository) FindByUserId(ctx context.Context, userId string) ([]entities.Product, error) {
 	var products []entities.Product
 	result := g.db.Table("orders").
 		Select("products.id, products.title, products.price, products.detail, products.created_at, products.updated_at").

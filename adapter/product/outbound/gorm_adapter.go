@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
+	productPort "github.com/wittawat/go-hex/core/port/product"
 	"gorm.io/gorm"
 )
 
 // ------------------------ Entities ------------------------
-type GormProduct struct {
+type gormProduct struct {
 	ID        uint           `gorm:"primaryKey;autoIncrement"`
 	Title     string         `gorm:"title"`
 	Price     int32          `gorm:"price"`
@@ -21,21 +22,23 @@ type GormProduct struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (GormProduct) TableName() string {
+// Set table name in postgresql database
+func (gormProduct) TableName() string {
 	return "products"
 }
 
-type GormProductRepository struct {
+type gormProductRepository struct {
 	db *gorm.DB
 }
 
 // ------------------------ Constructor ------------------------
-func NewGormProductRepository(db *gorm.DB) *GormProductRepository {
-	return &GormProductRepository{db: db}
+func NewGormProductRepository(db *gorm.DB) productPort.ProductRepository {
+	db.AutoMigrate(&gormProduct{})
+	return &gormProductRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
-func entities2GormProduct(p *entities.Product) (*GormProduct, error) {
+func entities2GormProduct(p *entities.Product) (*gormProduct, error) {
 	var deletedAt gorm.DeletedAt
 	if p.DeletedAt != nil {
 		deletedAt = gorm.DeletedAt{Time: *p.DeletedAt}
@@ -44,7 +47,7 @@ func entities2GormProduct(p *entities.Product) (*GormProduct, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &GormProduct{
+	return &gormProduct{
 		Title:     p.Title,
 		Price:     p.Price,
 		Detail:    p.Detail,
@@ -55,7 +58,7 @@ func entities2GormProduct(p *entities.Product) (*GormProduct, error) {
 	}, nil
 }
 
-func gorm2EntitiesProduct(gp *GormProduct) *entities.Product {
+func gorm2EntitiesProduct(gp *gormProduct) *entities.Product {
 	id := strconv.FormatUint(uint64(gp.ID), 10)
 	userIDStr := strconv.FormatUint(uint64(gp.CreatedBy), 10)
 	return &entities.Product{
@@ -71,7 +74,7 @@ func gorm2EntitiesProduct(gp *GormProduct) *entities.Product {
 }
 
 // ------------------------ Method ------------------------
-func (g *GormProductRepository) Save(ctx context.Context, product *entities.Product) error {
+func (g *gormProductRepository) Save(ctx context.Context, product *entities.Product) error {
 	gormProduct, err := entities2GormProduct(product)
 	if err != nil {
 		return err
@@ -80,7 +83,7 @@ func (g *GormProductRepository) Save(ctx context.Context, product *entities.Prod
 	return result.Error
 }
 
-func (g *GormProductRepository) Find(ctx context.Context) ([]entities.Product, error) {
+func (g *gormProductRepository) Find(ctx context.Context) ([]entities.Product, error) {
 	var products []entities.Product
 	result := g.db.WithContext(ctx).Table("products").Find(&products)
 	if result.Error != nil {
@@ -89,8 +92,8 @@ func (g *GormProductRepository) Find(ctx context.Context) ([]entities.Product, e
 	return products, nil
 }
 
-func (g *GormProductRepository) FindById(ctx context.Context, id string) (*entities.Product, error) {
-	var gp GormProduct
+func (g *gormProductRepository) FindById(ctx context.Context, id string) (*entities.Product, error) {
+	var gp gormProduct
 	result := g.db.WithContext(ctx).Table("products").First(&gp, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -98,24 +101,24 @@ func (g *GormProductRepository) FindById(ctx context.Context, id string) (*entit
 	return gorm2EntitiesProduct(&gp), nil
 }
 
-func (g *GormProductRepository) UpdateOne(ctx context.Context, product *entities.Product, id string) error {
+func (g *gormProductRepository) UpdateOne(ctx context.Context, product *entities.Product, id string) error {
 	result := g.db.WithContext(ctx).Table("products").Model(&entities.Product{}).Where("id = ?", id).Select("title", "price", "detail").Updates(product)
 	return result.Error
 }
 
-func (g *GormProductRepository) DeleteOne(ctx context.Context, id string) error {
+func (g *gormProductRepository) DeleteOne(ctx context.Context, id string) error {
 	result := g.db.WithContext(ctx).Table("products").Delete(id)
 	return result.Error
 }
 
-func (g *GormProductRepository) DeleteAll(ctx context.Context, userId string) error {
+func (g *gormProductRepository) DeleteAll(ctx context.Context, userId string) error {
 	userIDInt, err := strconv.Atoi(userId)
 	if err != nil {
 		return err
 	}
 	result := g.db.WithContext(ctx).
 		Where("created_by = ?", uint64(userIDInt)).
-		Delete(&GormProduct{})
+		Delete(&gormProduct{})
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}

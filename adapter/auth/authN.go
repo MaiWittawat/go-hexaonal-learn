@@ -8,15 +8,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type AuthNServiceImpl struct{}
+type AuthenService struct{}
 
 var secretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-func NewAuthNServiceImpl() *AuthNServiceImpl {
-	return &AuthNServiceImpl{}
+func NewAuthNServiceImpl() *AuthenService {
+	return &AuthenService{}
 }
 
-func (j *AuthNServiceImpl) CreateToken(email string) (string, error) {
+func (j *AuthenService) CreateToken(email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"email": email,
@@ -29,7 +29,7 @@ func (j *AuthNServiceImpl) CreateToken(email string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *AuthNServiceImpl) VerifyToken(tokenStr string) (jwt.MapClaims, error) {
+func (j *AuthenService) VerifyToken(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		return secretKey, nil
 	})
