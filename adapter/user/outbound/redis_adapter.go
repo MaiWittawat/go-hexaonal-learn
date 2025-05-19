@@ -88,7 +88,7 @@ func (r *redisUserRepository) FindByEmail(ctx context.Context, email string) (*e
 		return nil, err
 	}
 
-	log.Panicln("get data from database")
+	log.Println("get data from database")
 	return user, nil
 }
 

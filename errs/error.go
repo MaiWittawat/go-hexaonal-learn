@@ -11,7 +11,7 @@ var (
 	ErrCreatToken       = errors.New("fail to create token")
 	ErrVerifyToken      = errors.New("fail to verify token")
 	ErrLogin            = errors.New("fail to login")
-	ErrPassNotMatch     = errors.New("password or ")
+	ErrPassNotMatch     = errors.New("password or email is valid")
 
 	// User Error
 	ErrUserNotFound = errors.New("user not found")

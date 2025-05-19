@@ -5,7 +5,7 @@ import (
 	authNAdapter "github.com/wittawat/go-hex/adapter/auth"
 	middlewareAdapter "github.com/wittawat/go-hex/adapter/middleware"
 	orderAdapterInbound "github.com/wittawat/go-hex/adapter/order/inbound"
-	authZSvc "github.com/wittawat/go-hex/core/service"
+	authZSvc "github.com/wittawat/go-hex/core/services"
 )
 
 func RegisterOrderHandler(app *gin.Engine, orderHandler *orderAdapterInbound.HttpOrderHandler, authNAdapter *authNAdapter.AuthenService, authZSvc *authZSvc.AuthorizeService) {

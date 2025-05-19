@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func (s *OrderService) Create(ctx context.Context, order *entities.Order, email 
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		log.Println("Error Create Order(findByEmail): ", err)
-		return errs.ErrOrderNotFound
+		return errs.ErrUserNotFound
 	}
 	order.UserID = user.ID
 	order.CreatedAt = time.Now()
@@ -56,7 +56,7 @@ func (s *OrderService) EditOne(ctx context.Context, newOrder *entities.Order, id
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		log.Println("Error EditOne Order(findByEmail): ", err)
-		return errs.ErrOrderNotFound
+		return errs.ErrUserNotFound
 	}
 
 	if user.ID != oldOrder.UserID {

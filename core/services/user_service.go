@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -76,11 +76,9 @@ func (s *UserService) UpdateOne(ctx context.Context, newUser *entities.User, id 
 			return "", nil, errs.ErrCreatToken
 		}
 	}
-	claims, err := s.token.VerifyToken(newToken)
-	if err != nil {
-		log.Println("Error UpdateOne User(Vtoken): ", err)
-		return "", nil, errs.ErrVerifyToken
-	}
+
+	claims := jwt.MapClaims{"email": updateUser.Email}
+
 	if err := s.userRepo.UpdateOne(ctx, updateUser, id); err != nil {
 		log.Println("Error UpdateOne User(db): ", err)
 		return "", nil, errs.ErrUpdateUser

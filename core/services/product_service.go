@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func (s *ProductService) GetById(ctx context.Context, id string) (*entities.Prod
 	product, err := s.productRepo.FindById(ctx, id)
 	if err != nil {
 		log.Println("Error GetById Product(findById): ", err)
-		return nil, errs.ErrUserNotFound
+		return nil, errs.ErrProductNotFound
 	}
 	return product, nil
 }
@@ -93,15 +93,15 @@ func (s *ProductService) EditOne(ctx context.Context, newProduct *entities.Produ
 }
 
 func (s *ProductService) DropOne(ctx context.Context, id string, email string) error {
-	product, err := s.productRepo.FindById(ctx, id)
-	if err != nil {
-		log.Println("Error DropOne Product(findById): ", err)
-		return errs.ErrProductNotFound
-	}
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		log.Println("Error DropOne Product(findByEmail): ", err)
 		return errs.ErrUserNotFound
+	}
+	product, err := s.productRepo.FindById(ctx, id)
+	if err != nil {
+		log.Println("Error DropOne Product(findById): ", err)
+		return errs.ErrProductNotFound
 	}
 	if user.ID != product.CreatedBy {
 		log.Println("Error DropOne Product(userId): ", err)

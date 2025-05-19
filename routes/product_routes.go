@@ -5,7 +5,7 @@ import (
 	authNAdapter "github.com/wittawat/go-hex/adapter/auth"
 	middleware "github.com/wittawat/go-hex/adapter/middleware"
 	productAdapterInbound "github.com/wittawat/go-hex/adapter/product/inbound"
-	authZSvc "github.com/wittawat/go-hex/core/service"
+	authZSvc "github.com/wittawat/go-hex/core/services"
 )
 
 func RegisterProductHandler(app *gin.Engine, productHandler *productAdapterInbound.HttpProductHandler, authNAdapter *authNAdapter.AuthenService, authZSvc *authZSvc.AuthorizeService) {
