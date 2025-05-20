@@ -39,60 +39,69 @@
 ## Api List
 การเข้าถึง api จะถูกกำหนดสิทธิ์การเข้าถึงไว้โดยมี role กำกับทั้งหมด 3 role ดังนี้ 
 
-    user :  สิทธิ์การใช้งานระดับต้นของระบบสามารถเพิ่ม ลบ เเก้ไข ข้อมูลของตัวเองเเละสามารถสั่งซื้อสินค้าได้ผู้ใช้ที่สร้างผ่าน api /register/user จะได้รับ role นี้โดยอัตโนมัต
+> user :  สิทธิ์การใช้งานระดับต้นของระบบสามารถเพิ่ม ลบ เเก้ไข ข้อมูลของตัวเองเเละสามารถสั่งซื้อสินค้าได้ผู้ใช้ที่สร้างผ่าน api /register/user จะได้รับ role นี้โดยอัตโนมัต
 
-    seller : สิทธิ์การใช้งานระดับกลางของระบบสามารถ เพิ่ม ลบ เเก้ไขสินค้าได้เเละข้อมูลของตัวเองได้เเละสั่งซื้อสินค้าได้ผู้ใช้ที่สร้างผ่าน api /register/seller จะได้รับ role นี้โดยอัตโนมัต
+> seller : สิทธิ์การใช้งานระดับกลางของระบบสามารถ เพิ่ม ลบ เเก้ไขสินค้าได้เเละข้อมูลของตัวเองได้เเละสั่งซื้อสินค้าได้ผู้ใช้ที่สร้างผ่าน api /register/seller จะได้รับ role นี้โดยอัตโนมัต
 
-    admin : สิทธิ์การใช้งานระดับสูงสุดของระบบสามารถเข้าถึงได้ทุกการทำงานของระบบสามารถเพิ่ม ลบ เเก้ไข ผู้ใช้เเละสินค้าได้ทั้งหมด
+> admin : สิทธิ์การใช้งานระดับสูงสุดของระบบสามารถเข้าถึงได้ทุกการทำงานของระบบสามารถเพิ่ม ลบ เเก้ไข ผู้ใช้เเละสินค้าได้ทั้งหมด
 
 * ### User (สำหรับจัดการกับ user)  
     * GET
-        * localhost:3030/users (เเสดงข้อมูลผู้ใช้ทั้งหมด) Role : admin
-        * localhost:3030/users/:id (เเสดงข้อมูลผู้ใช้ตาม id) Role : user, seller, admin
+        * ``` localhost:3030/users ```
+        *เเสดงข้อมูลผู้ใช้ทั้งหมด Role : admin
+        * ``` localhost:3030/users/:id ``` 
+        *เเสดงข้อมูลผู้ใช้ตาม id Role : user, seller, admin
         
     * POST
-        * localhost:3030/register/user (สร้างผู้ใช้ role user)
-        * localhost:3030/register/seller (สร้างผู้ใช้ role seller)
-        * localhost:3030/login (เข้าสู่ระบบ)
+        * ``` localhost:3030/register/user ``` 
+        *สร้างผู้ใช้สิทธิ์ user
+        * ``` localhost:3030/register/seller ``` 
+        *สร้างผู้ใช้สิทธิ์ seller
+        * ``` localhost:3030/login ``` 
+        *เข้าสู่ระบบ
 
     * PATCH
-        * localhost:3030/users/:id (เเก้ไขข้อมูลผู้ใช้)
-    Role : user, seller, admin
+        * ``` localhost:3030/users/:id ```
+        *เเก้ไขข้อมูลผู้ใช้ Role : user, seller, admin
 
     * DELETE
-        * localhost:3030/users/:id (ลบผู้ใช้)
-    Role : user, seller, admin
+        * ``` localhost:3030/users/:id ``` 
+        *ลบผู้ใช้ Role : user, seller, admin
 
 * ### Product (สำหรับจัดการกับ product)
     * GET
-        * localhost:3030/products (เเสดงข้อมูลสินค้าทั้งหมด) Role : user, seller, admin
-        * localhost:3030/products/:id (เเสดงข้อมูลสินค้าตาม id) Role : user, seller, admin
+        * ``` localhost:3030/products ``` 
+        *เเสดงข้อมูลสินค้าทั้งหมด Role : user, seller, admin
+        * ``` localhost:3030/products/:id ``` 
+        *เเสดงข้อมูลสินค้าตาม id Role : user, seller, admin
         
     * POST 
-        * localhost:3030/products (สร้างสินค้า) Role : seller ,admin
+        * ``` localhost:3030/products ``` 
+        *สร้างสินค้า Role : seller ,admin
 
     * PATCH
-        * localhost:3030/products/:id (เเก้ไขสินค้า) 
-        Role : seller, admin
+        * ``` localhost:3030/products/:id ```
+        *เเก้ไขสินค้า Role : seller, admin
 
     * DELETE
-        * localhost:3030/products/:id (ลบสินค้า)
-    Role : seller ,admin
+        * ``` localhost:3030/products/:id ```
+        *ลบสินค้า Role : seller ,admin
 
 * ### Order (สำหรับจัดการกับ order)
     * GET
-        * localhost:3030/orders/user/:id (เเสดงข้อมูลคำสั่งซื้อทั้งหมดของผู้ใช้งานตาม id ของผู้ใช้) Role : user, seller, admin
+        * ``` localhost:3030/orders/user/:id ``` *เเสดงข้อมูลคำสั่งซื้อทั้งหมดของผู้ใช้งานตาม id ของผู้ใช้ Role : user, seller, admin
         
     * POST 
-        * localhost:3030/orders (สร้างคำสั่งซื้อ) Role : user, seller ,admin
+        * ``` localhost:3030/orders ```
+        *สร้างคำสั่งซื้อ Role : user, seller ,admin
 
     * PATCH
-        * localhost:3030/orders/:id (เเก้ไขคำสั่งซื้อค้า) 
-        Role : user, seller, admin
+        * ``` localhost:3030/orders/:id ``` 
+        *เเก้ไขคำสั่งซื้อค้า Role : user, seller, admin
 
     * DELETE
-        * localhost:3030/orders/:id (ลบคำสั่งซื้อ)
-    Role : user, seller ,admin
+        * ``` localhost:3030/orders/:id ```
+        *ลบคำสั่งซื้อ Role : user, seller ,admin
 
 ## Software Require
 * docker 
