@@ -52,9 +52,9 @@ func TestUpdateUser(t *testing.T) {
 	userRepoMock := userAdapter.NewUserRepositoryMock()
 	productRepoMock := productAdapter.NewProductRepositoryMock()
 	orderRepoMock := orderAdapter.NewOrderRepositoryMock()
-	token := authAdapter.NewAuthenService()
+	tokenRepoMock := authAdapter.NewAuthenServiceMock()
 
-	userService := services.NewUserService(userRepoMock, productRepoMock, orderRepoMock, token)
+	userService := services.NewUserService(userRepoMock, productRepoMock, orderRepoMock, tokenRepoMock)
 
 	t.Run("error_user_findById", func(t *testing.T) {
 		user := &entities.User{ID: "1", Email: "mai@example.com", Username: "mai", Password: "mai"}
@@ -78,8 +78,34 @@ func TestUpdateUser(t *testing.T) {
 		userRepoMock.ExpectedCalls = nil
 	})
 
+	t.Run("error_user_createToken", func(t *testing.T) {
+		oldUser := &entities.User{
+			ID:       "1",
+			Email:    "old@example.com",
+			Username: "old",
+			Password: "password",
+		}
+
+		newUser := &entities.User{
+			ID:       "1",
+			Email:    "new@example.com",
+			Username: "new",
+			Password: "password",
+		}
+
+		userRepoMock.On("FindById", ctx, newUser.ID).Return(oldUser, nil)
+		tokenRepoMock.On("CreateToken", newUser.Email).Return("", errs.ErrCreatToken)
+
+		newToken, _, err := userService.UpdateOne(ctx, newUser, newUser.ID, "old@example.com")
+
+		assert.Empty(t, newToken)
+		assert.EqualError(t, err, errs.ErrCreatToken.Error())
+
+		userRepoMock.ExpectedCalls = nil
+		tokenRepoMock.ExpectedCalls = nil
+	})
+
 	t.Run("error_user_updateOne", func(t *testing.T) {
-		tokenRepoMock := authAdapter.NewAuthenServiceMock()
 		mockToken := "mocked.token.value"
 		user := &entities.User{
 			ID:       "1",
@@ -100,6 +126,7 @@ func TestUpdateUser(t *testing.T) {
 		assert.EqualError(t, err, errs.ErrUpdateUser.Error())
 
 		userRepoMock.ExpectedCalls = nil
+		tokenRepoMock.ExpectedCalls = nil
 	})
 
 	t.Run("success", func(t *testing.T) {
