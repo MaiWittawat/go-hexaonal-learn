@@ -22,7 +22,7 @@ func main() {
 		panic("fail to load env")
 	}
 
-	dbType := "mongo" // change dbType to "postgres" if you want to try on postgres
+	dbType := "postgres" // change dbType to "postgres" if you want to try on postgres
 	app := gin.Default()
 
 	switch dbType {

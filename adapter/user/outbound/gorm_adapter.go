@@ -3,7 +3,7 @@ package userAdapter
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"math/rand/v2"
 	"strconv"
 	"time"
@@ -38,9 +38,9 @@ type gormUserRepository struct {
 // ------------------------ Constructor ------------------------
 func NewGormUserRepository(db *gorm.DB) userPort.UserRepository {
 	db.AutoMigrate(&gormUser{})
-	// if err := userFactoryPostgres(db); err != nil {
-	// 	return nil
-	// }
+	if err := userFactoryPostgres(db); err != nil {
+		log.Println("failed to feed user to postgres: ", err)
+	}
 	return &gormUserRepository{db: db}
 }
 
@@ -64,10 +64,10 @@ func userFactoryPostgres(db *gorm.DB) error {
 	var users []gormUser
 	for i := 1; i <= 10; i++ {
 		randomRole := rand.IntN(10) / 4
-		fmt.Println("randomRole: ", randomRole)
+		iStr := strconv.Itoa(i)
 		user := gormUser{
-			Username:  "user" + strconv.Itoa(i),
-			Email:     "user@example.com",
+			Username:  "user" + iStr,
+			Email:     "user" + iStr + "@example.com",
 			Password:  password,
 			Role:      role[randomRole],
 			CreatedAt: time.Now(),
@@ -77,6 +77,7 @@ func userFactoryPostgres(db *gorm.DB) error {
 		users = append(users, user)
 	}
 	db.Create(&users)
+	log.Println("feed user to postgres: success")
 	return nil
 }
 

@@ -2,6 +2,9 @@ package orderAdapter
 
 import (
 	"context"
+	"errors"
+	"log"
+	"math/rand/v2"
 	"strconv"
 	"time"
 
@@ -32,10 +35,86 @@ type gormOrderRepository struct {
 // ------------------------ Constructor ------------------------
 func NewGormOrderRepository(db *gorm.DB) orderPort.OrderRepository {
 	db.AutoMigrate(&gormOrder{})
+	if err := orderFactoryPostgres(db); err != nil {
+		log.Println("failed to feed order to postgres: ", err)
+	}
 	return &gormOrderRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
+func getUserFromPostgres(db *gorm.DB) ([]uint, error) {
+	var userIDs []uint
+	result := db.Model(&entities.User{}).Where("role=?", "user").Pluck("id", &userIDs)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if len(userIDs) == 0 {
+		return nil, errors.New("no user found in users")
+	}
+
+	log.Println("order::getUserFromPostgres: success")
+	return userIDs, nil
+}
+
+func getProductFromPostgres(db *gorm.DB) ([]uint, error) {
+	var productIDs []uint
+	result := db.Model(&entities.Product{}).Pluck("id", &productIDs)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if len(productIDs) == 0 {
+		return nil, errors.New("no product found in products")
+	}
+
+	log.Println("order::getProductFromPostgres: success")
+	return productIDs, nil
+}
+
+func orderFactoryPostgres(db *gorm.DB) error {
+	var count int64
+	result := db.Model(&entities.Order{}).Count(&count)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	users, err := getUserFromPostgres(db)
+	if err != nil {
+		return err
+	}
+
+	products, err := getProductFromPostgres(db)
+	if err != nil {
+		return err
+	}
+
+	var orders []gormOrder
+	for i := 1; i <= 10; i++ {
+		randomUser := rand.IntN(len(users))
+		randomProd := rand.IntN(len(products))
+		order := gormOrder{
+			UserID:    users[randomUser],
+			ProductID: products[randomProd],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: gorm.DeletedAt{},
+		}
+		orders = append(orders, order)
+	}
+	if result := db.Create(orders); result.Error != nil {
+		return result.Error
+	}
+	log.Println("feed order to postgres: success")
+	return nil
+}
+
 func entities2GormOrder(o *entities.Order) (*gormOrder, error) {
 	userID, err := strconv.Atoi(o.UserID)
 	if err != nil {

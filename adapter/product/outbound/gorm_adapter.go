@@ -2,6 +2,8 @@ package productAdapter
 
 import (
 	"context"
+	"errors"
+	"log"
 	"math/rand/v2"
 	"strconv"
 	"time"
@@ -35,17 +37,32 @@ type gormProductRepository struct {
 // ------------------------ Constructor ------------------------
 func NewGormProductRepository(db *gorm.DB) productPort.ProductRepository {
 	db.AutoMigrate(&gormProduct{})
-	// if err := productFactoryPostgres(db); err != nil {
-	// 	return nil
-	// }
+	if err := productFactoryPostgres(db); err != nil {
+		log.Println("failed to feed product to postgres: ", err)
+	}
 	return &gormProductRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
+func getSellerFromPostgres(db *gorm.DB) ([]uint, error) {
+	var sellerIDs []uint
+	result := db.Model(&entities.User{}).Where("role=?", "seller").Pluck("id", &sellerIDs)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if len(sellerIDs) == 0 {
+		return nil, errors.New("no seller found in users")
+	}
+
+	log.Println("product::getSellerFromPostgres: success")
+	return sellerIDs, nil
+}
+
 func productFactoryPostgres(db *gorm.DB) error {
 	var count int64
 	result := db.Model(&entities.Product{}).Count(&count)
-
 	if result.Error != nil {
 		return result.Error
 	}
@@ -54,15 +71,20 @@ func productFactoryPostgres(db *gorm.DB) error {
 		return nil
 	}
 
+	sellers, err := getSellerFromPostgres(db)
+	if err != nil {
+		return err
+	}
+
 	var products []gormProduct
 	for i := 1; i <= 10; i++ {
 		iStr := strconv.Itoa(i)
-		randomId := rand.IntN(10)
+		randomId := rand.IntN(len(sellers))
 		product := gormProduct{
 			Title:     "product" + iStr,
 			Price:     int32(i * 10),
 			Detail:    "detail for product" + iStr,
-			CreatedBy: uint(randomId),
+			CreatedBy: sellers[randomId],
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			DeletedAt: gorm.DeletedAt{},
@@ -70,6 +92,7 @@ func productFactoryPostgres(db *gorm.DB) error {
 		products = append(products, product)
 	}
 	db.Create(&products)
+	log.Println("feed product to postgres: success")
 	return nil
 }
 

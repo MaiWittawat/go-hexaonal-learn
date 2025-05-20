@@ -3,7 +3,6 @@ package userAdapter
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"math/rand/v2"
 	"strconv"
@@ -36,9 +35,9 @@ type mongoUserRepository struct {
 
 // ------------------------ Constructor ------------------------
 func NewMongoUserRepository(col *mongo.Collection) userPort.UserRepository {
-	// if err := userFactoryMongo(col); err != nil {
-	// 	return nil
-	// }
+	if err := userFactoryMongo(col); err != nil {
+		log.Println("failed to feed user to mongo: ", err)
+	}
 	return &mongoUserRepository{collection: col}
 }
 
@@ -60,10 +59,10 @@ func userFactoryMongo(col *mongo.Collection) error {
 	var users []interface{}
 	for i := 1; i <= 10; i++ {
 		randomRole := rand.IntN(10) / 4
-		fmt.Println("randomRole: ", randomRole)
+		iStr := strconv.Itoa(i)
 		user := mongoUser{
-			Username:  "user" + strconv.Itoa(i),
-			Email:     "user@example.com",
+			Username:  "user" + iStr,
+			Email:     "user" + iStr + "@example.com",
 			Password:  password,
 			Role:      role[randomRole],
 			CreatedAt: time.Now(),
@@ -73,6 +72,7 @@ func userFactoryMongo(col *mongo.Collection) error {
 		users = append(users, user)
 	}
 	col.InsertMany(context.Background(), users)
+	log.Println("feed user to mongo: success")
 	return nil
 }
 

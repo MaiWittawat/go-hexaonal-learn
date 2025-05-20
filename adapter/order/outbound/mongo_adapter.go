@@ -2,7 +2,10 @@ package orderAdapter
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
+	"math/rand/v2"
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
@@ -27,11 +30,108 @@ type mongoOrderRepository struct {
 }
 
 // ------------------------ Constructor ------------------------
-func NewMongoOrderRepository(col *mongo.Collection) orderPort.OrderRepository {
+func NewMongoOrderRepository(col *mongo.Collection, userCol *mongo.Collection, prodCol *mongo.Collection) orderPort.OrderRepository {
+	if err := orderFactoryMongo(col, userCol, prodCol); err != nil {
+		log.Println("failed to feed order to mongo: ", err)
+	}
 	return &mongoOrderRepository{collection: col}
 }
 
 // ------------------------ Private Function -----------------------
+func getUserFromMongo(ctx context.Context, userCol *mongo.Collection) ([]primitive.ObjectID, error) {
+	filter := bson.M{"role": "user"}
+	cursor, err := userCol.Find(ctx, filter)
+	if err != nil {
+		return nil, errors.New("failed to find users")
+	}
+	defer cursor.Close(ctx)
+
+	type UserID struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+
+	var userDocs []UserID
+	if err := cursor.All(ctx, &userDocs); err != nil {
+		return nil, errors.New("failed to decode users")
+	}
+	if len(userDocs) == 0 {
+		return nil, errors.New("no user found in users collection")
+	}
+
+	var userIDs []primitive.ObjectID
+	for _, user := range userDocs {
+		userIDs = append(userIDs, user.ID)
+	}
+	log.Println("order::getUserFromMongo: success")
+	return userIDs, nil
+}
+
+func getProductFromMongo(ctx context.Context, prodCol *mongo.Collection) ([]primitive.ObjectID, error) {
+	cursor, err := prodCol.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, errors.New("failed to find users")
+	}
+	defer cursor.Close(ctx)
+
+	type ProductID struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+
+	var prodDocs []ProductID
+	if err := cursor.All(ctx, &prodDocs); err != nil {
+		return nil, errors.New("failed to decode users")
+	}
+
+	if len(prodDocs) == 0 {
+		return nil, errors.New("no product found in products collection")
+	}
+
+	var prodIDs []primitive.ObjectID
+	for _, prod := range prodDocs {
+		prodIDs = append(prodIDs, prod.ID)
+	}
+	log.Println("getProductFromMongo: success")
+	return prodIDs, nil
+}
+
+func orderFactoryMongo(col *mongo.Collection, userCol *mongo.Collection, prodCol *mongo.Collection) error {
+	ctx := context.Background()
+	users, err := getUserFromMongo(ctx, userCol)
+	if err != nil {
+		return err
+	}
+	products, err := getProductFromMongo(ctx, prodCol)
+	if err != nil {
+		return err
+	}
+
+	count, err := col.CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	var orders []interface{}
+	for i := 1; i <= 10; i++ {
+		randomUser := rand.IntN(len(users))
+		randomProd := rand.IntN(len(products))
+		order := mongoOrder{
+			UserID:    users[randomUser],
+			ProductID: products[randomProd],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+		orders = append(orders, order)
+	}
+	col.InsertMany(ctx, orders)
+	log.Println("feed order to mongo: success")
+	return nil
+}
+
 func entities2MongoOrder(order *entities.Order) (*mongoOrder, error) {
 	userID, err := primitive.ObjectIDFromHex(order.UserID)
 	if err != nil {

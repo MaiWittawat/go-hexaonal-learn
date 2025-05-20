@@ -3,6 +3,7 @@ package productAdapter
 import (
 	"context"
 	"errors"
+	"log"
 	"math/rand/v2"
 	"strconv"
 	"time"
@@ -31,10 +32,10 @@ type mongoProductRepository struct {
 }
 
 // ------------------------ Constructor ------------------------
-func NewMongoProductRepository(col *mongo.Collection) productPort.ProductRepository {
-	// if err := productFactoryMongo(col); err != nil {
-	// 	return nil
-	// }
+func NewMongoProductRepository(col *mongo.Collection, userCol *mongo.Collection) productPort.ProductRepository {
+	if err := productFactoryMongo(col, userCol); err != nil {
+		log.Println("failed to feed product to mongo: ", err)
+	}
 	return &mongoProductRepository{collection: col}
 }
 
@@ -58,18 +59,24 @@ func getSellerFormMongo(userCol *mongo.Collection) ([]primitive.ObjectID, error)
 	}
 
 	if len(sellerDocs) == 0 {
-		return nil, errors.New("no sellers found in users collection")
+		return nil, errors.New("no seller found in users collection")
 	}
 
 	var sellerIDs []primitive.ObjectID
 	for _, seller := range sellerDocs {
 		sellerIDs = append(sellerIDs, seller.ID)
 	}
-
+	log.Println("product::getSellerFromMongo: success")
 	return sellerIDs, nil
 }
 
-func productFactoryMongo(col *mongo.Collection) error {
+func productFactoryMongo(col *mongo.Collection, userCol *mongo.Collection) error {
+	sellers, err := getSellerFormMongo(userCol)
+
+	if err != nil {
+		return err
+	}
+
 	count, err := col.CountDocuments(context.Background(), bson.M{})
 
 	if err != nil {
@@ -83,13 +90,12 @@ func productFactoryMongo(col *mongo.Collection) error {
 	var products []interface{}
 	for i := 1; i <= 10; i++ {
 		iStr := strconv.Itoa(i)
-		randNStr := strconv.Itoa(rand.IntN(10))
-		objectId, _ := primitive.ObjectIDFromHex(randNStr)
+		randSell := rand.IntN(len(sellers))
 		product := mongoProduct{
 			Title:     "product" + iStr,
 			Price:     int32(i * 10),
 			Detail:    "detail for product" + iStr,
-			CreatedBy: objectId,
+			CreatedBy: sellers[randSell],
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			DeletedAt: nil,
@@ -97,6 +103,7 @@ func productFactoryMongo(col *mongo.Collection) error {
 		products = append(products, product)
 	}
 	col.InsertMany(context.Background(), products)
+	log.Println("feed product to mongo: success")
 	return nil
 }
 

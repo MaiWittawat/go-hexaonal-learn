@@ -33,8 +33,8 @@ func InitMongoApp(ctx context.Context, app *gin.Engine) (*mongo.Client, error) {
 
 	// Repository
 	userRepo := userAdapterOutbound.NewMongoUserRepository(mgDB.Collection("users"))
-	productRepo := productAdapterOutbound.NewMongoProductRepository(mgDB.Collection("products"))
-	orderRepo := orderAdapterOutbound.NewMongoOrderRepository(mgDB.Collection("orders"))
+	productRepo := productAdapterOutbound.NewMongoProductRepository(mgDB.Collection("products"), mgDB.Collection("users"))
+	orderRepo := orderAdapterOutbound.NewMongoOrderRepository(mgDB.Collection("orders"), mgDB.Collection("users"), mgDB.Collection("products"))
 
 	// Redis
 	userRedisRepo := userAdapterOutbound.NewRedisUserRepository(redisClient, userRepo)
