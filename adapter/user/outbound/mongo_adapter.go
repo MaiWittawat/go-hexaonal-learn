@@ -3,7 +3,10 @@ package userAdapter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"math/rand/v2"
+	"strconv"
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
@@ -12,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // ------------------------ Entities ------------------------
@@ -32,10 +36,46 @@ type mongoUserRepository struct {
 
 // ------------------------ Constructor ------------------------
 func NewMongoUserRepository(col *mongo.Collection) userPort.UserRepository {
+	// if err := userFactoryMongo(col); err != nil {
+	// 	return nil
+	// }
 	return &mongoUserRepository{collection: col}
 }
 
 // ------------------------ Private Function -----------------------
+func userFactoryMongo(col *mongo.Collection) error {
+	count, err := col.CountDocuments(context.Background(), bson.M{})
+	role := []string{"user", "seller", "admin"}
+	hash, _ := bcrypt.GenerateFromPassword([]byte("password"), 4)
+	password := string(hash)
+
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	var users []interface{}
+	for i := 1; i <= 10; i++ {
+		randomRole := rand.IntN(10) / 4
+		fmt.Println("randomRole: ", randomRole)
+		user := mongoUser{
+			Username:  "user" + strconv.Itoa(i),
+			Email:     "user@example.com",
+			Password:  password,
+			Role:      role[randomRole],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+		users = append(users, user)
+	}
+	col.InsertMany(context.Background(), users)
+	return nil
+}
+
 func entities2MongoUser(user *entities.User) *mongoUser {
 	return &mongoUser{
 		Username:  user.Username,

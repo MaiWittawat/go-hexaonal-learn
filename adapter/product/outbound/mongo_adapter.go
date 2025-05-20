@@ -2,6 +2,9 @@ package productAdapter
 
 import (
 	"context"
+	"errors"
+	"math/rand/v2"
+	"strconv"
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
@@ -29,10 +32,74 @@ type mongoProductRepository struct {
 
 // ------------------------ Constructor ------------------------
 func NewMongoProductRepository(col *mongo.Collection) productPort.ProductRepository {
+	// if err := productFactoryMongo(col); err != nil {
+	// 	return nil
+	// }
 	return &mongoProductRepository{collection: col}
 }
 
 // ------------------------ Private Function ------------------------
+func getSellerFormMongo(userCol *mongo.Collection) ([]primitive.ObjectID, error) {
+	ctx := context.Background()
+	filter := bson.M{"role": "seller"}
+	cursor, err := userCol.Find(ctx, filter)
+	if err != nil {
+		return nil, errors.New("failed to find sellers")
+	}
+	defer cursor.Close(ctx)
+
+	type SellerID struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+
+	var sellerDocs []SellerID
+	if err := cursor.All(ctx, &sellerDocs); err != nil {
+		return nil, errors.New("failed to decode sellers")
+	}
+
+	if len(sellerDocs) == 0 {
+		return nil, errors.New("no sellers found in users collection")
+	}
+
+	var sellerIDs []primitive.ObjectID
+	for _, seller := range sellerDocs {
+		sellerIDs = append(sellerIDs, seller.ID)
+	}
+
+	return sellerIDs, nil
+}
+
+func productFactoryMongo(col *mongo.Collection) error {
+	count, err := col.CountDocuments(context.Background(), bson.M{})
+
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	var products []interface{}
+	for i := 1; i <= 10; i++ {
+		iStr := strconv.Itoa(i)
+		randNStr := strconv.Itoa(rand.IntN(10))
+		objectId, _ := primitive.ObjectIDFromHex(randNStr)
+		product := mongoProduct{
+			Title:     "product" + iStr,
+			Price:     int32(i * 10),
+			Detail:    "detail for product" + iStr,
+			CreatedBy: objectId,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+		products = append(products, product)
+	}
+	col.InsertMany(context.Background(), products)
+	return nil
+}
+
 func entities2MongoProduct(p *entities.Product) (*mongoProduct, error) {
 	objUserID, err := primitive.ObjectIDFromHex(p.CreatedBy)
 	if err != nil {

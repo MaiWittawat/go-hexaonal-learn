@@ -13,8 +13,8 @@ func RegisterProductHandler(app *gin.Engine, productHandler *productAdapterInbou
 	public.GET("/", productHandler.GetAllProduct)
 	public.GET("/:id", productHandler.GetProduct)
 
-	protected := app.Group("/products", middleware.JWTAuthMiddleware(authNAdapter))
-	protected.POST("/", middleware.RequireRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.CreateProduct)
-	protected.PATCH("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.UpdateProduct)
-	protected.DELETE("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.DeleteProduct)
+	protected := app.Group("/products", middleware.AuthenticationMiddleware(authNAdapter))
+	protected.POST("/", middleware.AuthorizeRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.CreateProduct)
+	protected.PATCH("/:id", middleware.AuthorizeRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.UpdateProduct)
+	protected.DELETE("/:id", middleware.AuthorizeRoles(authNAdapter, authZSvc, "seller", "admin"), productHandler.DeleteProduct)
 }

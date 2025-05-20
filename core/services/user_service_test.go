@@ -12,7 +12,7 @@ import (
 	userAdapter "github.com/wittawat/go-hex/adapter/user/outbound"
 	"github.com/wittawat/go-hex/core/entities"
 	"github.com/wittawat/go-hex/core/services"
-	"github.com/wittawat/go-hex/errs"
+	"github.com/wittawat/go-hex/utils/errs"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -77,28 +77,6 @@ func TestUpdateUser(t *testing.T) {
 
 		userRepoMock.ExpectedCalls = nil
 	})
-
-	// t.Run("error_user_createToken", func(t *testing.T) {
-	// 	tokenRepoMock := authAdapter.NewAuthNServiceImpMock()
-	// 	user := &entities.User{
-	// 		ID:       "1",
-	// 		Email:    "mail@example.com",
-	// 		Username: "mai",
-	// 		Password: "maimai",
-	// 	}
-
-	// 	userRepoMock.On("FindById", ctx, user.ID).Return(user, nil)
-	// 	tokenRepoMock.On("CreateToken", user.Email).Return("", errs.ErrCreatToken)
-
-	// 	userRepoMock.On("UpdateOne", ctx, mock.AnythingOfType("*entities.User"), user.ID).Return(nil)
-
-	// 	_, _, err := userService.UpdateOne(ctx, user, user.ID, "mai@example.com")
-
-	// 	assert.EqualError(t, err, errs.ErrCreatToken.Error())
-
-	// 	userRepoMock.ExpectedCalls = nil
-	// 	tokenRepoMock.ExpectedCalls = nil
-	// })
 
 	t.Run("error_user_updateOne", func(t *testing.T) {
 		tokenRepoMock := authAdapter.NewAuthNServiceImpMock()

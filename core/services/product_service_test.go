@@ -12,7 +12,7 @@ import (
 	userAdapter "github.com/wittawat/go-hex/adapter/user/outbound"
 	"github.com/wittawat/go-hex/core/entities"
 	"github.com/wittawat/go-hex/core/services"
-	"github.com/wittawat/go-hex/errs"
+	"github.com/wittawat/go-hex/utils/errs"
 )
 
 func TestCreateProduct(t *testing.T) {

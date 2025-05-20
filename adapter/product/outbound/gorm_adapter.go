@@ -2,6 +2,7 @@ package productAdapter
 
 import (
 	"context"
+	"math/rand/v2"
 	"strconv"
 	"time"
 
@@ -34,10 +35,44 @@ type gormProductRepository struct {
 // ------------------------ Constructor ------------------------
 func NewGormProductRepository(db *gorm.DB) productPort.ProductRepository {
 	db.AutoMigrate(&gormProduct{})
+	// if err := productFactoryPostgres(db); err != nil {
+	// 	return nil
+	// }
 	return &gormProductRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
+func productFactoryPostgres(db *gorm.DB) error {
+	var count int64
+	result := db.Model(&entities.Product{}).Count(&count)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	var products []gormProduct
+	for i := 1; i <= 10; i++ {
+		iStr := strconv.Itoa(i)
+		randomId := rand.IntN(10)
+		product := gormProduct{
+			Title:     "product" + iStr,
+			Price:     int32(i * 10),
+			Detail:    "detail for product" + iStr,
+			CreatedBy: uint(randomId),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: gorm.DeletedAt{},
+		}
+		products = append(products, product)
+	}
+	db.Create(&products)
+	return nil
+}
+
 func entities2GormProduct(p *entities.Product) (*gormProduct, error) {
 	var deletedAt gorm.DeletedAt
 	if p.DeletedAt != nil {

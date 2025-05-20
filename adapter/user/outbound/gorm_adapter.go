@@ -3,11 +3,14 @@ package userAdapter
 
 import (
 	"context"
+	"fmt"
+	"math/rand/v2"
 	"strconv"
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
 	userPort "github.com/wittawat/go-hex/core/port/user"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -35,10 +38,48 @@ type gormUserRepository struct {
 // ------------------------ Constructor ------------------------
 func NewGormUserRepository(db *gorm.DB) userPort.UserRepository {
 	db.AutoMigrate(&gormUser{})
+	// if err := userFactoryPostgres(db); err != nil {
+	// 	return nil
+	// }
 	return &gormUserRepository{db: db}
 }
 
 // ------------------------ Private Function ------------------------
+func userFactoryPostgres(db *gorm.DB) error {
+	var count int64
+	result := db.Model(&entities.User{}).Count(&count)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	role := []string{"user", "seller", "admin"}
+	hash, _ := bcrypt.GenerateFromPassword([]byte("password"), 4)
+	password := string(hash)
+
+	var users []gormUser
+	for i := 1; i <= 10; i++ {
+		randomRole := rand.IntN(10) / 4
+		fmt.Println("randomRole: ", randomRole)
+		user := gormUser{
+			Username:  "user" + strconv.Itoa(i),
+			Email:     "user@example.com",
+			Password:  password,
+			Role:      role[randomRole],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: gorm.DeletedAt{},
+		}
+		users = append(users, user)
+	}
+	db.Create(&users)
+	return nil
+}
+
 func entities2GormUser(u *entities.User) (*gormUser, error) {
 	var deletedAt gorm.DeletedAt
 	if u.DeletedAt != nil {

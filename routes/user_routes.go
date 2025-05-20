@@ -14,9 +14,9 @@ func RegisterUserHandler(app *gin.Engine, userHandler *userAdapterInbound.HttpUs
 	public.POST("/login", userHandler.Login)
 	public.POST("/register/seller", userHandler.SellerRegister)
 
-	protected := app.Group("/users", middleware.JWTAuthMiddleware(authNAdapter))
+	protected := app.Group("/users", middleware.AuthenticationMiddleware(authNAdapter))
 	protected.GET("/:id", userHandler.GetUser)
-	protected.GET("/", middleware.RequireRoles(authNAdapter, authZSvc, "admin"), userHandler.GetAllUser)
-	protected.PATCH("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.UpdateUser)
-	protected.DELETE("/:id", middleware.RequireRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.DeleteUser)
+	protected.GET("/", middleware.AuthorizeRoles(authNAdapter, authZSvc, "admin"), userHandler.GetAllUser)
+	protected.PATCH("/:id", middleware.AuthorizeRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.UpdateUser)
+	protected.DELETE("/:id", middleware.AuthorizeRoles(authNAdapter, authZSvc, "admin", "seller", "user"), userHandler.DeleteUser)
 }

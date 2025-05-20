@@ -11,7 +11,7 @@ import (
 	authPort "github.com/wittawat/go-hex/core/port/auth"
 )
 
-func RequireRoles(tokenSvc authPort.JwtAuthNService, authZSvc authPort.JwtAuthZService, roles ...string) gin.HandlerFunc {
+func AuthorizeRoles(tokenSvc authPort.JwtAuthNService, authZSvc authPort.JwtAuthZService, roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		token := strings.TrimPrefix(authHeader, "Bearer ")

@@ -8,7 +8,7 @@ import (
 	authPort "github.com/wittawat/go-hex/core/port/auth"
 )
 
-func JWTAuthMiddleware(tokenService authPort.JwtAuthNService) gin.HandlerFunc {
+func AuthenticationMiddleware(tokenService authPort.JwtAuthNService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := c.GetHeader("Authorization")
 		token := strings.TrimPrefix(s, "Bearer ")

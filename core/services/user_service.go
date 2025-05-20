@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/wittawat/go-hex/core/entities"
-	validator "github.com/wittawat/go-hex/core/internal/util/validate"
-	"github.com/wittawat/go-hex/errs"
+	validator "github.com/wittawat/go-hex/core/internal/validate"
+	"github.com/wittawat/go-hex/utils/errs"
 
 	authPort "github.com/wittawat/go-hex/core/port/auth"
 	orderPort "github.com/wittawat/go-hex/core/port/order"

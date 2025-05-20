@@ -9,9 +9,9 @@ import (
 )
 
 func RegisterOrderHandler(app *gin.Engine, orderHandler *orderAdapterInbound.HttpOrderHandler, authNAdapter *authNAdapter.AuthenService, authZSvc *authZSvc.AuthorizeService) {
-	protected := app.Group("/orders", middlewareAdapter.JWTAuthMiddleware(authNAdapter))
-	protected.GET("/user/:user_id", middlewareAdapter.RequireRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.FindOrder)
-	protected.POST("/", middlewareAdapter.RequireRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.CreateOrder)
-	protected.PATCH("/:id", middlewareAdapter.RequireRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.UpdateOrder)
-	protected.DELETE("/:id", middlewareAdapter.RequireRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.DeleteOrder)
+	protected := app.Group("/orders", middlewareAdapter.AuthenticationMiddleware(authNAdapter))
+	protected.GET("/user/:user_id", middlewareAdapter.AuthorizeRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.FindOrder)
+	protected.POST("/", middlewareAdapter.AuthorizeRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.CreateOrder)
+	protected.PATCH("/:id", middlewareAdapter.AuthorizeRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.UpdateOrder)
+	protected.DELETE("/:id", middlewareAdapter.AuthorizeRoles(authNAdapter, authZSvc, "user", "seller", "admin"), orderHandler.DeleteOrder)
 }

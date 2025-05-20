@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wittawat/go-hex/adapter/helper"
 	"github.com/wittawat/go-hex/core/entities"
 	productPort "github.com/wittawat/go-hex/core/port/product"
+	"github.com/wittawat/go-hex/utils/helper"
 )
 
 // ------------------------ Entities ------------------------ //

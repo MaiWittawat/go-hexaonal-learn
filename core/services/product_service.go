@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/wittawat/go-hex/core/entities"
-	validator "github.com/wittawat/go-hex/core/internal/util/validate"
+	validator "github.com/wittawat/go-hex/core/internal/validate"
 	orderPort "github.com/wittawat/go-hex/core/port/order"
 	productPort "github.com/wittawat/go-hex/core/port/product"
 	userPort "github.com/wittawat/go-hex/core/port/user"
-	"github.com/wittawat/go-hex/errs"
+	"github.com/wittawat/go-hex/utils/errs"
 )
 
 type ProductService struct {
