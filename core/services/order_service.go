@@ -63,9 +63,9 @@ func (s *OrderService) EditOne(ctx context.Context, newOrder *entities.Order, id
 		log.Println("Error EditOne Order(userId): ", err)
 		return errs.ErrForbidden
 	}
-	order := validator.EnsureUpdateOrder(oldOrder, newOrder)
+	updateOrder := validator.EnsureUpdateOrder(oldOrder, newOrder)
 
-	if err := s.orderRepo.UpdateOne(ctx, order, id); err != nil {
+	if err := s.orderRepo.UpdateOne(ctx, updateOrder, id); err != nil {
 		log.Println("Error EditOne Order(db): ", err)
 		return errs.ErrUpdateOrder
 	}

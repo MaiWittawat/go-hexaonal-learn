@@ -153,7 +153,7 @@ func TestEditOneOrder(t *testing.T) {
 
 		orderRepoMock.On("FindById", ctx, oldOrder.ID).Return(oldOrder, nil)
 		userRepoMock.On("FindByEmail", ctx, user.Email).Return(user, nil)
-		orderRepoMock.On("UpdateOne", ctx, mock.AnythingOfType("*entities.Order"), oldOrder.ID).Return(errs.ErrUpdateOrder) // Mock UpdateOne ให้คืน Error
+		orderRepoMock.On("UpdateOne", ctx, mock.AnythingOfType("*entities.Order"), oldOrder.ID).Return(errs.ErrUpdateOrder)
 
 		err := orderService.EditOne(ctx, newOrder, oldOrder.ID, user.Email)
 		assert.EqualError(t, err, errs.ErrUpdateOrder.Error())
@@ -165,12 +165,13 @@ func TestEditOneOrder(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		user := &entities.User{ID: "1", Email: "mai@example.com"}
 		order := &entities.Order{ID: "1", UserID: "1", ProductID: "1"}
+		newOrder := &entities.Order{ID: "1", UserID: "1", ProductID: "2"}
 
 		orderRepoMock.On("FindById", ctx, order.ID).Return(order, nil)
 		userRepoMock.On("FindByEmail", ctx, user.Email).Return(user, nil)
-		orderRepoMock.On("DeleteOne", ctx, order.ID).Return(nil)
+		orderRepoMock.On("UpdateOne", ctx, mock.AnythingOfType("*entities.Order"), order.ID).Return(nil)
 
-		err := orderService.EditOne(ctx, order, order.ID, "mai@example.com")
+		err := orderService.EditOne(ctx, newOrder, order.ID, "mai@example.com")
 
 		assert.Nil(t, err)
 		userRepoMock.ExpectedCalls = nil
