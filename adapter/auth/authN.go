@@ -12,7 +12,7 @@ type AuthenService struct{}
 
 var secretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-func NewAuthNServiceImpl() *AuthenService {
+func NewAuthenService() *AuthenService {
 	return &AuthenService{}
 }
 

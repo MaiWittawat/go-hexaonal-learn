@@ -26,7 +26,7 @@ func InitPostgresApp(app *gin.Engine) error {
 	redisClient := db.InitRedis()
 
 	// Authentication
-	authNSvc := jwtAuthNAdapter.NewAuthNServiceImpl()
+	authNSvc := jwtAuthNAdapter.NewAuthenService()
 
 	// Repository
 	userRepo := userAdapterOutbound.NewGormUserRepository(pgDB)

@@ -29,7 +29,7 @@ func InitMongoApp(ctx context.Context, app *gin.Engine) (*mongo.Client, error) {
 	redisClient := db.InitRedis()
 
 	// Authentication
-	authNSvc := jwtAuthNAdapter.NewAuthNServiceImpl()
+	authNSvc := jwtAuthNAdapter.NewAuthenService()
 
 	// Repository
 	userRepo := userAdapterOutbound.NewMongoUserRepository(mgDB.Collection("users"))
